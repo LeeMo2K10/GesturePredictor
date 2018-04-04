@@ -71,7 +71,7 @@ public interface Classifier {
     }
 
 
-    List<Recognition> recognizeGesture(float[] floats);
+    String recognizeGesture(float[][][] floats);
 
     void close();
 }

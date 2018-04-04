@@ -8,21 +8,16 @@ import org.tensorflow.lite.Interpreter;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.List;
-import java.util.PriorityQueue;
 
 
 public class MainModel implements Classifier{
 
 
-    private static final float THRESHOLD = 0.1f;
-    private static final int MAX_RESULTS = 1;
     private Interpreter interpreter;
     private List<String> labelList;
 
@@ -41,18 +36,14 @@ public class MainModel implements Classifier{
     }
 
 
-    public List<Recognition> recognizeGesture(float[] f) {
-        byte[][] result = new byte[1][labelList.size()];
-        interpreter.run(convertFloatArrayToByteBuffer(f), result);
-        return getSortedResult(result);
+    public String recognizeGesture(float[][][] f) {
+        float[][] result = new float[1][labelList.size()];
+        System.out.println(Arrays.toString(f));
+        interpreter.run(f, result);
+        System.out.println("Result:" + Arrays.toString(result[0]));
+        return getNamedResult(result[0]);
     }
 
-    private ByteBuffer convertFloatArrayToByteBuffer(float[] f){
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1 * 14 * 2);
-        byteBuffer.order(ByteOrder.nativeOrder());
-        
-        return byteBuffer;
-    }
 
     @Override
     public void close() {
@@ -84,34 +75,18 @@ public class MainModel implements Classifier{
 
 
     @SuppressLint("DefaultLocale")
-    private List<Recognition> getSortedResult(byte[][] labelProbArray) {
+    private String getNamedResult(float[] labelProbArray) {
 
-        PriorityQueue<Recognition> pq =
-                new PriorityQueue<>(
-                        MAX_RESULTS,
-                        new Comparator<Recognition>() {
-                            @Override
-                            public int compare(Recognition lhs, Recognition rhs) {
-                                return Float.compare(rhs.getConfidence(), lhs.getConfidence());
-                            }
-                        });
-
-        for (int i = 0; i < labelList.size(); ++i) {
-            float confidence = (labelProbArray[0][i] & 0xff) / 255.0f;
-            if (confidence > THRESHOLD) {
-                pq.add(new Recognition("" + i,
-                        labelList.size() > i ? labelList.get(i) : "unknown",
-                        confidence));
+        float max_prob = 0;
+        int max_idx = -1;
+        for (int idx = 0; idx<labelProbArray.length;idx++){
+            if (labelProbArray[idx] > max_prob){
+                max_idx = idx;
+                max_prob = labelProbArray[idx];
             }
         }
 
-        final ArrayList<Recognition> recognitions = new ArrayList<>();
-        int recognitionsSize = Math.min(pq.size(), MAX_RESULTS);
-        for (int i = 0; i < recognitionsSize; ++i) {
-            recognitions.add(pq.poll());
-        }
-
-        return recognitions;
+        return labelList.get(max_idx);
     }
 
 }

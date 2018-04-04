@@ -16,9 +16,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -37,6 +35,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private ArrayList<Long> allTime = new ArrayList<>();
     private float[] preMag;
     private float[] preGravity;
+
+    private static final int FRAME_NUMBER = 14;
 
     private Classifier classifier;
     private static final String MODEL_PATH = "foo.tflite";
@@ -92,9 +92,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 }
                 @Override
                 public void onFinish(){
-                    s = "Result: 2";
-                    mTextView.setText(s);
                     isRecording = false;
+                    setResult();
                 }
             };
             countDownTimer.start();
@@ -174,15 +173,15 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     private float[] combine12Acc(float[] acc_123){
-        return new float[]{(float) Math.sqrt(Math.pow(acc_123[0],2) + Math.pow(acc_123[1],2)), acc_123[2]};
+        return new float[]{acc_123[2],(float) Math.sqrt(Math.pow(acc_123[0],2) + Math.pow(acc_123[1],2))};
     }
 
-    static <T> T[] append(T[] arr, T element) {
-        final int N = arr.length;
-        arr = Arrays.copyOf(arr, N + 1);
-        arr[N] = element;
-        return arr;
-    }
+//    static <T> T[] append(T[] arr, T element) {
+//        final int N = arr.length;
+//        arr = Arrays.copyOf(arr, N + 1);
+//        arr[N] = element;
+//        return arr;
+//    }
 
     @Override
     protected void onDestroy() {
@@ -210,9 +209,37 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         });
     }
 
-    private void setResult(ByteBuffer data){
-        final List<Classifier.Recognition> results = classifier.recognizeGesture(data);
+    private void setResult(){
 
-        mTextView.setText(results.toString());
+        final String results = classifier.recognizeGesture(getFrameFeature());
+        mTextView.setText(results);
+    }
+
+    private float[][][] getFrameFeature(){
+//        ratio = float(len(array)) / float(size+1)
+//        res = []
+//        for i in range(size):
+//        res.append(np.mean(array[math.floor(i*ratio):math.ceil((i+2.0)*ratio)], axis = 0))
+//        return np.array(res)
+        float ratio = allData.size() / (FRAME_NUMBER + 1);
+        float[][][] result = new float[1][14][2];
+        int startIdx;
+        int endIdx;
+        for (int i = 0; i < FRAME_NUMBER; i++){
+            startIdx = (int) Math.floor(i*ratio);
+            endIdx = (int) Math.ceil((i+2.0)*ratio);
+            result[0][i][0] = getMean(allData.subList(startIdx, endIdx),0);
+            result[0][i][1] = getMean(allData.subList(startIdx, endIdx),1);
+        }
+        return result;
+
+    }
+
+    private float getMean(List<float[]> arr, int column){
+        float sum = 0;
+        for (float[] t : arr){
+            sum+=t[column];
+        }
+        return sum/arr.size();
     }
 }
