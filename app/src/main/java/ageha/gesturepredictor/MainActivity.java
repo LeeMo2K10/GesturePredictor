@@ -212,7 +212,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private void setResult(){
 
         final String results = classifier.recognizeGesture(getFrameFeature());
-        mTextView.setText(results);
+        mTextView.setText("Result:" + results);
     }
 
     private float[][][] getFrameFeature(){
