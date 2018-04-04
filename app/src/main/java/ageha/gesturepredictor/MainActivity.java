@@ -1,7 +1,6 @@
 package ageha.gesturepredictor;
 
 import android.content.Context;
-import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -17,23 +16,31 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.FileOutputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 
 public class MainActivity extends WearableActivity implements SensorEventListener{
 
     private TextView mTextView;
     private Button startBtn;
-    private Vibrator v;
+    private Vibrator vibrator;
     private TimeStart timer;
     private boolean isRecording;
     private long sensorTimeReference = 0L;
     private long myTimeReference = 0L;
-    private FileOutputStream fos = null;
-    private StringBuilder sb = new StringBuilder();
+    private ArrayList<float[]> allData = new ArrayList<>();
+    private ArrayList<Long> allTime = new ArrayList<>();
     private float[] preMag;
     private float[] preGravity;
+
+    private Classifier classifier;
+    private static final String MODEL_PATH = "foo.tflite";
+    private Executor executor = Executors.newSingleThreadExecutor();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,11 +60,13 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         RegisterSensors();
         timer = new TimeStart();
-        v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // Enables Always-on
         setAmbientEnabled();
         isRecording = false;
+
+        initTensorFlowAndLoadModel();
     }
 
     private class TimeStart extends Thread{
@@ -95,10 +104,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private void vibrate(){
         // Vibrate for 500 milliseconds
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            v.vibrate(VibrationEffect.createOneShot(150,VibrationEffect.DEFAULT_AMPLITUDE));
+            vibrator.vibrate(VibrationEffect.createOneShot(150,VibrationEffect.DEFAULT_AMPLITUDE));
         }else{
             //deprecated in API 26
-            v.vibrate(150);
+            vibrator.vibrate(150);
         }
     }
 
@@ -137,57 +146,16 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             }
             else if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
                 if ((preMag != null) & (preGravity != null)){
-//                    WriteSensorEvent(myTimeReference +
-//                                    Math.round((event.timestamp - sensorTimeReference) / 1000000.0),
-//                            getEarchAcc(preMag, event.values, preGravity));
-                    System.out.println(Arrays.toString(event.values));
-                    System.out.println("earth:" + Arrays.toString(getEarchAcc(preMag, event.values, preGravity)));
+                    allTime.add(myTimeReference + Math.round((event.timestamp - sensorTimeReference) / 1000000.0));
+                    allData.add(combine12Acc(getEarchAcc(preMag, event.values, preGravity)));
+
+//                    System.out.println(Arrays.toString(event.values));
+//                    System.out.println("earth:" + Arrays.toString(getEarchAcc(preMag, event.values, preGravity)));
                 }
             }
         }
     }
 
-
-
-    private void WriteSensorEvent(long time,float[] values){
-//        try {
-
-            sb.append(String.valueOf(time));
-            for (float i:values){
-                sb.append(", ").append(String.valueOf(i));
-            }
-            sb.append('\n');
-//            if (sb.length() > 2500){
-//                fos.write(sb.toString().getBytes());
-//                sb.setLength(0);
-//            }
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-    }
-
-//    private void createFile(){
-//            if (fos != null){
-//                return;
-//            }
-//            String file_path = getDocStorageDir(getBaseContext()).getAbsolutePath() + "/" + "temp.csv";
-//            try {
-//                fos = new FileOutputStream(new File(file_path));
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//            try{
-//                fos.write("TIMESTAMP,VALUES1,VALUES2,VALUES3 \n".getBytes());
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//    private File getDocStorageDir(Context context) {
-//        return new File(context.getExternalFilesDir(
-//                Environment.DIRECTORY_DOCUMENTS), "DATA");
-//    }
 
     private float[] getEarchAcc(float[] mag, float[] acc, float[] gravity){
         if (acc.length == 3){
@@ -205,10 +173,46 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         return new float[]{earthAcc[0],earthAcc[1],earthAcc[2]};
     }
 
+    private float[] combine12Acc(float[] acc_123){
+        return new float[]{(float) Math.sqrt(Math.pow(acc_123[0],2) + Math.pow(acc_123[1],2)), acc_123[2]};
+    }
+
     static <T> T[] append(T[] arr, T element) {
         final int N = arr.length;
         arr = Arrays.copyOf(arr, N + 1);
         arr[N] = element;
         return arr;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                classifier.close();
+            }
+        });
+    }
+
+    private void initTensorFlowAndLoadModel() {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    classifier = MainModel.create(
+                            getAssets(),
+                            MODEL_PATH);
+                } catch (final Exception e) {
+                    throw new RuntimeException("Error initializing TensorFlow!", e);
+                }
+            }
+        });
+    }
+
+    private void setResult(ByteBuffer data){
+        final List<Classifier.Recognition> results = classifier.recognizeGesture(data);
+
+        mTextView.setText(results.toString());
     }
 }
