@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CountVectorizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.feature_extraction.text</a> &gt; <span class="el_source">CountVectorizer.java</span></div><h1>CountVectorizer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.feature_extraction.text;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.xml.parsers.DocumentBuilder;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.io.CharStreams;
+import numpy.DType;
+import numpy.core.Scalar;
+import org.dmg.pmml.Apply;
+import org.dmg.pmml.Constant;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.DefineFunction;
+import org.dmg.pmml.DerivedField;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.FieldRef;
+import org.dmg.pmml.InlineTable;
+import org.dmg.pmml.OpType;
+import org.dmg.pmml.ParameterField;
+import org.dmg.pmml.TextIndex;
+import org.dmg.pmml.TextIndexNormalization;
+import org.jpmml.converter.ContinuousFeature;
+import org.jpmml.converter.DOMUtil;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.FeatureUtil;
+import org.jpmml.converter.PMMLEncoder;
+import org.jpmml.converter.PMMLUtil;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.HasNumberOfFeatures;
+import sklearn.Transformer;
+import sklearn2pmml.feature_extraction.text.Splitter;
+
+public class CountVectorizer extends Transformer implements HasNumberOfFeatures {
+
+	public CountVectorizer(String module, String name){
+<span class="fc" id="L68">		super(module, name);</span>
+<span class="fc" id="L69">	}</span>
+
+	@Override
+	public OpType getOpType(){
+<span class="fc" id="L73">		return OpType.CATEGORICAL;</span>
+	}
+
+	@Override
+	public DataType getDataType(){
+<span class="fc" id="L78">		return DataType.STRING;</span>
+	}
+
+	@Override
+	public int getNumberOfFeatures(){
+<span class="fc" id="L83">		return 1;</span>
+	}
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L88">		Boolean lowercase = getLowercase();</span>
+<span class="fc" id="L89">		Map&lt;String, ?&gt; vocabulary = getVocabulary();</span>
+
+<span class="fc" id="L91">		ClassDictUtil.checkSize(1, features);</span>
+
+<span class="fc" id="L93">		Feature feature = features.get(0);</span>
+
+<span class="fc" id="L95">		BiMap&lt;String, Integer&gt; termIndexMap = HashBiMap.create(vocabulary.size());</span>
+
+<span class="fc" id="L97">		Collection&lt;? extends Map.Entry&lt;String, ?&gt;&gt; entries = vocabulary.entrySet();</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">		for(Map.Entry&lt;String, ?&gt; entry : entries){</span>
+<span class="fc" id="L99">			termIndexMap.put(entry.getKey(), toIndex(entry.getValue()));</span>
+<span class="fc" id="L100">		}</span>
+
+<span class="fc" id="L102">		BiMap&lt;Integer, String&gt; indexTermMap = termIndexMap.inverse();</span>
+
+<span class="fc" id="L104">		DType dtype = getDType();</span>
+
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">		if(lowercase){</span>
+<span class="fc" id="L107">			FieldName name = FeatureUtil.createName(&quot;lowercase&quot;, feature);</span>
+
+<span class="fc" id="L109">			DerivedField derivedField = encoder.getDerivedField(name);</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">			if(derivedField == null){</span>
+<span class="fc" id="L111">				Apply apply = PMMLUtil.createApply(&quot;lowercase&quot;, feature.ref());</span>
+
+<span class="fc" id="L113">				derivedField = encoder.createDerivedField(name, OpType.CATEGORICAL, DataType.STRING, apply);</span>
+			}
+
+<span class="fc" id="L116">			feature = new Feature(encoder, derivedField.getName(), derivedField.getDataType()){</span>
+
+				@Override
+				public ContinuousFeature toContinuousFeature(){
+<span class="nc" id="L120">					throw new UnsupportedOperationException();</span>
+				}
+			};
+		}
+
+<span class="fc" id="L125">		DefineFunction defineFunction = encodeDefineFunction();</span>
+
+<span class="fc" id="L127">		encoder.addDefineFunction(defineFunction);</span>
+
+<span class="fc" id="L129">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L131" title="All 2 branches covered.">		for(int i = 0, max = indexTermMap.size(); i &lt; max; i++){</span>
+<span class="fc" id="L132">			String term = indexTermMap.get(i);</span>
+
+			final
+<span class="fc" id="L135">			Apply apply = encodeApply(defineFunction.getName(), feature, i, term);</span>
+
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">			Feature termFeature = new Feature(encoder, FieldName.create(defineFunction.getName() + &quot;(&quot; + term + &quot;)&quot;), dtype != null ? dtype.getDataType() : DataType.DOUBLE){</span>
+
+				@Override
+				public ContinuousFeature toContinuousFeature(){
+<span class="fc" id="L141">					PMMLEncoder encoder = ensureEncoder();</span>
+
+<span class="fc" id="L143">					DerivedField derivedField = encoder.getDerivedField(getName());</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">					if(derivedField == null){</span>
+<span class="fc" id="L145">						derivedField = encoder.createDerivedField(getName(), OpType.CONTINUOUS, getDataType(), apply);</span>
+					}
+
+<span class="fc" id="L148">					return new ContinuousFeature(encoder, derivedField);</span>
+				}
+			};
+
+<span class="fc" id="L152">			result.add(termFeature);</span>
+		}
+
+<span class="fc" id="L155">		return result;</span>
+	}
+
+	public DefineFunction encodeDefineFunction(){
+<span class="fc" id="L159">		String analyzer = getAnalyzer();</span>
+<span class="fc" id="L160">		List&lt;String&gt; stopWords = getStopWords();</span>
+<span class="fc" id="L161">		Object[] nGramRange = getNGramRange();</span>
+<span class="fc" id="L162">		Boolean binary = getBinary();</span>
+<span class="fc" id="L163">		Object preprocessor = getPreprocessor();</span>
+<span class="fc" id="L164">		String stripAccents = getStripAccents();</span>
+<span class="fc" id="L165">		Splitter tokenizer = getTokenizer();</span>
+
+<span class="pc bpc" id="L167" title="3 of 6 branches missed.">		switch(analyzer){</span>
+			case &quot;word&quot;:
+<span class="fc" id="L169">				break;</span>
+			default:
+<span class="nc" id="L171">				throw new IllegalArgumentException(analyzer);</span>
+		}
+
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">		if(preprocessor != null){</span>
+<span class="nc" id="L175">			throw new IllegalArgumentException();</span>
+		} // End if
+
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">		if(stripAccents != null){</span>
+<span class="nc" id="L179">			throw new IllegalArgumentException(stripAccents);</span>
+		}
+
+<span class="fc" id="L182">		ParameterField documentField = new ParameterField(FieldName.create(&quot;document&quot;));</span>
+
+<span class="fc" id="L184">		ParameterField termField = new ParameterField(FieldName.create(&quot;term&quot;));</span>
+
+<span class="fc" id="L186">		TextIndex textIndex = new TextIndex(documentField.getName())</span>
+<span class="fc" id="L187">			.setTokenize(Boolean.TRUE)</span>
+<span class="fc" id="L188">			.setWordSeparatorCharacterRE(tokenizer.getSeparatorRE())</span>
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">			.setLocalTermWeights(binary ? TextIndex.LocalTermWeights.BINARY : null)</span>
+<span class="fc" id="L190">			.setExpression(new FieldRef(termField.getName()));</span>
+
+<span class="pc bpc" id="L192" title="3 of 6 branches missed.">		if((stopWords != null &amp;&amp; stopWords.size() &gt; 0) &amp;&amp; !Arrays.equals(nGramRange, new Integer[]{1, 1})){</span>
+<span class="fc" id="L193">			DocumentBuilder documentBuilder = DOMUtil.createDocumentBuilder();</span>
+
+<span class="fc" id="L195">			InlineTable inlineTable = new InlineTable()</span>
+<span class="fc" id="L196">				.addRows(DOMUtil.createRow(documentBuilder, Arrays.asList(&quot;string&quot;, &quot;stem&quot;, &quot;regex&quot;), Arrays.asList(&quot;(^|\\s+)\\p{Punct}*(&quot; + JOINER.join(stopWords) + &quot;)\\p{Punct}*(\\s+|$)&quot;, &quot; &quot;, &quot;true&quot;)));</span>
+
+<span class="fc" id="L198">			TextIndexNormalization textIndexNormalization = new TextIndexNormalization()</span>
+<span class="fc" id="L199">				.setRecursive(Boolean.TRUE) // Handles consecutive matches. See http://stackoverflow.com/a/25085385</span>
+<span class="fc" id="L200">				.setInlineTable(inlineTable);</span>
+
+<span class="fc" id="L202">			textIndex.addTextIndexNormalizations(textIndexNormalization);</span>
+		}
+
+<span class="fc" id="L205">		String name = functionName() + &quot;@&quot; + String.valueOf(CountVectorizer.SEQUENCE.getAndIncrement());</span>
+
+<span class="fc" id="L207">		DefineFunction defineFunction = new DefineFunction(name, OpType.CONTINUOUS, null)</span>
+<span class="fc" id="L208">			.setDataType(DataType.DOUBLE)</span>
+<span class="fc" id="L209">			.addParameterFields(documentField, termField)</span>
+<span class="fc" id="L210">			.setExpression(textIndex);</span>
+
+<span class="fc" id="L212">		return defineFunction;</span>
+	}
+
+	public Apply encodeApply(String function, Feature feature, int index, String term){
+<span class="fc" id="L216">		Constant constant = PMMLUtil.createConstant(term)</span>
+<span class="fc" id="L217">			.setDataType(DataType.STRING);</span>
+
+<span class="fc" id="L219">		return PMMLUtil.createApply(function, feature.ref(), constant);</span>
+	}
+
+	public String functionName(){
+<span class="nc" id="L223">		return &quot;tf&quot;;</span>
+	}
+
+	public String getAnalyzer(){
+<span class="fc" id="L227">		return (String)get(&quot;analyzer&quot;);</span>
+	}
+
+	public Boolean getBinary(){
+<span class="fc" id="L231">		return (Boolean)get(&quot;binary&quot;);</span>
+	}
+
+	public Boolean getLowercase(){
+<span class="fc" id="L235">		return (Boolean)get(&quot;lowercase&quot;);</span>
+	}
+
+	public Object[] getNGramRange(){
+<span class="fc" id="L239">		return (Object[])get(&quot;ngram_range&quot;);</span>
+	}
+
+	public Object getPreprocessor(){
+<span class="fc" id="L243">		return get(&quot;preprocessor&quot;);</span>
+	}
+
+	public List&lt;String&gt; getStopWords(){
+<span class="fc" id="L247">		Object stopWords = get(&quot;stop_words&quot;);</span>
+
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">		if(stopWords instanceof String){</span>
+<span class="fc" id="L250">			return loadStopWords((String)stopWords);</span>
+		}
+
+<span class="nc" id="L253">		return (List)stopWords;</span>
+	}
+
+	public String getStripAccents(){
+<span class="fc" id="L257">		return (String)get(&quot;strip_accents&quot;);</span>
+	}
+
+	public Splitter getTokenizer(){
+<span class="fc" id="L261">		return get(&quot;tokenizer&quot;, Splitter.class);</span>
+	}
+
+	public String getTokenPattern(){
+<span class="nc" id="L265">		return (String)get(&quot;token_pattern&quot;);</span>
+	}
+
+	public Map&lt;String, ?&gt; getVocabulary(){
+<span class="fc" id="L269">		return get(&quot;vocabulary_&quot;, Map.class);</span>
+	}
+
+	static
+	private List&lt;String&gt; loadStopWords(String stopWords){
+<span class="fc" id="L274">		InputStream is = CountVectorizer.class.getResourceAsStream(&quot;/stop_words/&quot; + stopWords + &quot;.txt&quot;);</span>
+
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">		if(is == null){</span>
+<span class="nc" id="L277">			throw new IllegalArgumentException(stopWords);</span>
+		}
+
+<span class="pc" id="L280">		try(Reader reader = new InputStreamReader(is, &quot;UTF-8&quot;)){</span>
+<span class="fc" id="L281">			return CharStreams.readLines(reader);</span>
+<span class="pc bpc" id="L282" title="6 of 8 branches missed.">		} catch(IOException ioe){</span>
+<span class="nc" id="L283">			throw new IllegalArgumentException(stopWords, ioe);</span>
+		}
+	}
+
+	static
+	private Integer toIndex(Object value){
+
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">		if(value instanceof Scalar){</span>
+<span class="fc" id="L291">			Scalar scalar = (Scalar)value;</span>
+
+<span class="fc" id="L293">			value = scalar.getOnlyElement();</span>
+		}
+
+<span class="fc" id="L296">		return ValueUtil.asInteger((Number)value);</span>
+	}
+
+<span class="fc" id="L299">	private static final Joiner JOINER = Joiner.on(&quot;|&quot;);</span>
+
+<span class="fc" id="L301">	private static final AtomicInteger SEQUENCE = new AtomicInteger(1);</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

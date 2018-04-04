@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoricalDomain.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn2pmml.decoration</a> &gt; <span class="el_source">CategoricalDomain.java</span></div><h1>CategoricalDomain.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn2pmml.decoration;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.DiscrStats;
+import org.dmg.pmml.OpType;
+import org.dmg.pmml.UnivariateStats;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.PMMLUtil;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.converter.WildcardFeature;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.TypeUtil;
+
+public class CategoricalDomain extends Domain {
+
+	public CategoricalDomain(String module, String name){
+<span class="fc" id="L42">		super(module, name);</span>
+<span class="fc" id="L43">	}</span>
+
+	@Override
+	public OpType getOpType(){
+<span class="fc" id="L47">		return OpType.CATEGORICAL;</span>
+	}
+
+	@Override
+	public DataType getDataType(){
+<span class="fc" id="L52">		Boolean withData = getWithData();</span>
+
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">		if(withData){</span>
+<span class="fc" id="L55">			List&lt;?&gt; data = getData();</span>
+
+<span class="fc" id="L57">			return TypeUtil.getDataType(data, DataType.STRING);</span>
+		}
+
+<span class="nc" id="L60">		return DataType.STRING;</span>
+	}
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L65">		Boolean withData = getWithData();</span>
+<span class="fc" id="L66">		Boolean withStatistics = getWithStatistics();</span>
+
+<span class="fc" id="L68">		ClassDictUtil.checkSize(1, features);</span>
+
+<span class="fc" id="L70">		Feature feature = features.get(0);</span>
+
+<span class="fc" id="L72">		WildcardFeature wildcardFeature = (WildcardFeature)feature;</span>
+
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">		if(withData){</span>
+<span class="fc" id="L75">			List&lt;?&gt; data = getData();</span>
+
+<span class="fc" id="L77">			Function&lt;Object, String&gt; function = new Function&lt;Object, String&gt;(){</span>
+
+				@Override
+				public String apply(Object object){
+<span class="fc" id="L81">					return ValueUtil.formatValue(object);</span>
+				}
+			};
+
+<span class="fc" id="L85">			List&lt;String&gt; categories = Lists.transform(data, function);</span>
+
+<span class="fc" id="L87">			feature = wildcardFeature.toCategoricalFeature(categories);</span>
+		} // End if
+
+<span class="fc bfc" id="L90" title="All 2 branches covered.">		if(withStatistics){</span>
+<span class="fc" id="L91">			Map&lt;String, ?&gt; counts = extractMap(getCounts(), 0);</span>
+<span class="fc" id="L92">			Object[] discrStats = getDiscrStats();</span>
+
+<span class="fc" id="L94">			UnivariateStats univariateStats = new UnivariateStats()</span>
+<span class="fc" id="L95">				.setField(wildcardFeature.getName())</span>
+<span class="fc" id="L96">				.setCounts(createCounts(counts))</span>
+<span class="fc" id="L97">				.setDiscrStats(createDiscrStats(discrStats));</span>
+
+<span class="fc" id="L99">			encoder.putUnivariateStats(univariateStats);</span>
+		}
+
+<span class="fc" id="L102">		return super.encodeFeatures(Collections.&lt;Feature&gt;singletonList(feature), encoder);</span>
+	}
+
+	public List&lt;?&gt; getData(){
+<span class="fc" id="L106">		return getArray(&quot;data_&quot;);</span>
+	}
+
+	public Object[] getDiscrStats(){
+<span class="fc" id="L110">		return (Object[])get(&quot;discr_stats_&quot;);</span>
+	}
+
+	static
+	public DiscrStats createDiscrStats(Object[] objects){
+<span class="fc" id="L115">		List&lt;Object&gt; values = (List)asArray(objects[0]);</span>
+<span class="fc" id="L116">		List&lt;Integer&gt; counts = ValueUtil.asIntegers((List)asArray(objects[1]));</span>
+
+<span class="fc" id="L118">		ClassDictUtil.checkSize(values, counts);</span>
+
+<span class="fc" id="L120">		DiscrStats discrStats = new DiscrStats()</span>
+<span class="fc" id="L121">			.addArrays(PMMLUtil.createStringArray(values), PMMLUtil.createIntArray(counts));</span>
+
+<span class="fc" id="L123">		return discrStats;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

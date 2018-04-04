@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClassDictUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">org.jpmml.sklearn</a> &gt; <span class="el_source">ClassDictUtil.java</span></div><h1>ClassDictUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.jpmml.sklearn;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
+import net.razorvine.pickle.objects.ClassDict;
+
+public class ClassDictUtil {
+
+<span class="nc" id="L32">	private ClassDictUtil(){</span>
+<span class="nc" id="L33">	}</span>
+
+	static
+	public void checkSize(Collection&lt;?&gt;... collections){
+<span class="fc" id="L37">		Collection&lt;?&gt; prevCollection = null;</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">		for(Collection&lt;?&gt; collection : collections){</span>
+
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">			if(collection == null){</span>
+<span class="nc" id="L42">				continue;</span>
+			} // End if
+
+<span class="pc bpc" id="L45" title="1 of 4 branches missed.">			if(prevCollection != null &amp;&amp; collection.size() != prevCollection.size()){</span>
+<span class="nc" id="L46">				throw new IllegalArgumentException(&quot;Expected the same number of elements, got different numbers of elements&quot;);</span>
+			}
+
+<span class="fc" id="L49">			prevCollection = collection;</span>
+		}
+<span class="fc" id="L51">	}</span>
+
+	static
+	public void checkSize(int size, Collection&lt;?&gt;... collections){
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">		for(Collection&lt;?&gt; collection : collections){</span>
+
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">			if(collection == null){</span>
+<span class="nc" id="L59">				continue;</span>
+			} // End if
+
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">			if(collection.size() != size){</span>
+<span class="nc" id="L63">				throw new IllegalArgumentException(&quot;Expected &quot; + size + &quot; element(s), got &quot; + collection.size() + &quot; element(s)&quot;);</span>
+			}
+		}
+<span class="fc" id="L66">	}</span>
+
+	static
+	public void checkShapes(int axis, int[]... shapes){
+<span class="fc" id="L70">		int[] prevShape = null;</span>
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">		for(int[] shape : shapes){</span>
+
+<span class="pc bpc" id="L74" title="1 of 4 branches missed.">			if(prevShape != null &amp;&amp; prevShape[axis] != shape[axis]){</span>
+<span class="nc" id="L75">				throw new IllegalArgumentException(&quot;Expected the same number of elements, got different number of elements&quot;);</span>
+			}
+
+<span class="fc" id="L78">			prevShape = shape;</span>
+		}
+<span class="fc" id="L80">	}</span>
+
+	static
+	public void checkShapes(int axis, int size, int[]... shapes){
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">		for(int[] shape : shapes){</span>
+
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">			if(shape[axis] != size){</span>
+<span class="nc" id="L88">				throw new IllegalArgumentException(&quot;Expected &quot; + size + &quot; element(s), got &quot; + shape[axis] + &quot; element(s)&quot;);</span>
+			}
+		}
+<span class="fc" id="L91">	}</span>
+
+	static
+	public String getName(ClassDict dict){
+<span class="nc" id="L95">		String clazz = (String)dict.get(&quot;__class__&quot;);</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">		if(clazz == null){</span>
+<span class="nc" id="L98">			throw new IllegalArgumentException();</span>
+		}
+
+<span class="nc" id="L101">		return clazz;</span>
+	}
+
+	static
+	public String getSimpleName(ClassDict dict){
+<span class="nc" id="L106">		String name = getName(dict);</span>
+
+<span class="nc" id="L108">		int dot = name.lastIndexOf('.');</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">		if(dot &gt; -1){</span>
+<span class="nc" id="L110">			return name.substring(dot + 1);</span>
+		}
+
+<span class="nc" id="L113">		return name;</span>
+	}
+
+	static
+	public String formatMember(ClassDict dict, String name){
+<span class="fc" id="L118">		String clazz = (String)dict.get(&quot;__class__&quot;);</span>
+
+<span class="fc" id="L120">		return (clazz + &quot;.&quot; + name);</span>
+	}
+
+	static
+	public String formatClass(Object object){
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">		if(object == null){</span>
+<span class="nc" id="L127">			return null;</span>
+		} // End if
+
+<span class="nc bnc" id="L130" title="All 2 branches missed.">		if(object instanceof ClassDict){</span>
+<span class="nc" id="L131">			ClassDict dict = (ClassDict)object;</span>
+
+<span class="nc" id="L133">			return &quot;Python class &quot; + getName(dict);</span>
+		}
+
+<span class="nc" id="L136">		Class&lt;?&gt; clazz = object.getClass();</span>
+
+<span class="nc" id="L138">		return &quot;Java class &quot; + clazz.getName();</span>
+	}
+
+	static
+	public String formatProxyExample(Class&lt;? extends ClassDict&gt; proxyClazz, ClassDict dict){
+<span class="nc" id="L143">		return (proxyClazz.getSimpleName() + &quot;(&quot; + ClassDictUtil.getSimpleName(dict) + &quot;(...))&quot;);</span>
+	}
+
+	static
+	public String toString(ClassDict dict){
+<span class="nc" id="L148">		StringBuffer sb = new StringBuffer();</span>
+
+<span class="nc" id="L150">		sb.append(&quot;\n{\n&quot;);</span>
+
+<span class="nc" id="L152">		String sep = &quot;&quot;;</span>
+
+<span class="nc" id="L154">		List&lt;? extends Map.Entry&lt;String, ?&gt;&gt; entries = new ArrayList&lt;&gt;(dict.entrySet());</span>
+
+<span class="nc" id="L156">		Comparator&lt;Map.Entry&lt;String, ?&gt;&gt; comparator = new Comparator&lt;Map.Entry&lt;String, ?&gt;&gt;(){</span>
+
+			@Override
+			public int compare(Map.Entry&lt;String, ?&gt; left, Map.Entry&lt;String, ?&gt; right){
+<span class="nc" id="L160">				return (left.getKey()).compareToIgnoreCase(right.getKey());</span>
+			}
+		};
+<span class="nc" id="L163">		Collections.sort(entries, comparator);</span>
+
+<span class="nc bnc" id="L165" title="All 2 branches missed.">		for(Map.Entry&lt;String, ?&gt; entry : entries){</span>
+<span class="nc" id="L166">			sb.append(sep);</span>
+
+<span class="nc" id="L168">			sep = &quot;\n&quot;;</span>
+
+<span class="nc" id="L170">			String key = entry.getKey();</span>
+<span class="nc" id="L171">			Object value = entry.getValue();</span>
+
+<span class="nc bnc" id="L173" title="All 2 branches missed.">			sb.append(&quot;\t&quot; + key + &quot;=&quot; + value + (&quot; // &quot; + (value != null ? (value.getClass()).getName() : &quot;N/A&quot;)));</span>
+<span class="nc" id="L174">		}</span>
+
+<span class="nc" id="L176">		sb.append(&quot;\n}\n&quot;);</span>
+
+<span class="nc" id="L178">		return sb.toString();</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

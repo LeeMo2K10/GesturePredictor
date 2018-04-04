@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PCA.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.decomposition</a> &gt; <span class="el_source">PCA.java</span></div><h1>PCA.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.decomposition;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.dmg.pmml.Apply;
+import org.dmg.pmml.DerivedField;
+import org.dmg.pmml.Expression;
+import org.dmg.pmml.FieldName;
+import org.jpmml.converter.CMatrixUtil;
+import org.jpmml.converter.ContinuousFeature;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.PMMLUtil;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.HasNumberOfFeatures;
+import sklearn.Transformer;
+
+public class PCA extends Transformer implements HasNumberOfFeatures {
+
+	public PCA(String module, String name){
+<span class="fc" id="L42">		super(module, name);</span>
+<span class="fc" id="L43">	}</span>
+
+	@Override
+	public int getNumberOfFeatures(){
+<span class="fc" id="L47">		int[] shape = getComponentsShape();</span>
+
+<span class="fc" id="L49">		return shape[1];</span>
+	}
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L54">		int[] shape = getComponentsShape();</span>
+
+<span class="fc" id="L56">		int numberOfComponents = shape[0];</span>
+<span class="fc" id="L57">		int numberOfFeatures = shape[1];</span>
+
+<span class="fc" id="L59">		List&lt;? extends Number&gt; components = getComponents();</span>
+<span class="fc" id="L60">		List&lt;? extends Number&gt; mean = getMean();</span>
+
+<span class="fc" id="L62">		ClassDictUtil.checkSize(numberOfFeatures, features, mean);</span>
+
+<span class="fc" id="L64">		Boolean whiten = getWhiten();</span>
+
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">		List&lt;? extends Number&gt; explainedVariance = (whiten ? getExplainedVariance() : null);</span>
+
+<span class="fc" id="L68">		ClassDictUtil.checkSize(numberOfComponents, explainedVariance);</span>
+
+<span class="fc" id="L70">		String id = name() + &quot;@&quot; + String.valueOf(PCA.SEQUENCE.getAndIncrement());</span>
+
+<span class="fc" id="L72">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L74" title="All 2 branches covered.">		for(int i = 0; i &lt; numberOfComponents; i++){</span>
+<span class="fc" id="L75">			List&lt;? extends Number&gt; component = CMatrixUtil.getRow(components, numberOfComponents, numberOfFeatures, i);</span>
+
+<span class="fc" id="L77">			Apply apply = new Apply(&quot;sum&quot;);</span>
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">			for(int j = 0; j &lt; numberOfFeatures; j++){</span>
+<span class="fc" id="L80">				Feature feature = features.get(j);</span>
+
+<span class="fc" id="L82">				Number meanValue = mean.get(j);</span>
+<span class="fc" id="L83">				Number componentValue = component.get(j);</span>
+
+<span class="pc bpc" id="L85" title="3 of 4 branches missed.">				if(ValueUtil.isZero(meanValue) &amp;&amp; ValueUtil.isOne(componentValue)){</span>
+<span class="nc" id="L86">					apply.addExpressions(feature.ref());</span>
+
+<span class="nc" id="L88">					continue;</span>
+				}
+
+<span class="fc" id="L91">				ContinuousFeature continuousFeature = feature.toContinuousFeature();</span>
+
+				// &quot;($name[i] - mean[i]) * component[i]&quot;
+<span class="fc" id="L94">				Expression expression = continuousFeature.ref();</span>
+
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">				if(!ValueUtil.isZero(meanValue)){</span>
+<span class="fc" id="L97">					expression = PMMLUtil.createApply(&quot;-&quot;, expression, PMMLUtil.createConstant(meanValue));</span>
+				} // End if
+
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">				if(!ValueUtil.isOne(componentValue)){</span>
+<span class="fc" id="L101">					expression = PMMLUtil.createApply(&quot;*&quot;, expression, PMMLUtil.createConstant(componentValue));</span>
+				}
+
+<span class="fc" id="L104">				apply.addExpressions(expression);</span>
+			}
+
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">			if(whiten){</span>
+<span class="fc" id="L108">				Number explainedVarianceValue = explainedVariance.get(i);</span>
+
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">				if(!ValueUtil.isOne(explainedVarianceValue)){</span>
+<span class="fc" id="L111">					apply = PMMLUtil.createApply(&quot;/&quot;, apply, PMMLUtil.createConstant(Math.sqrt(ValueUtil.asDouble(explainedVarianceValue))));</span>
+				}
+			}
+
+<span class="fc" id="L115">			DerivedField derivedField = encoder.createDerivedField(FieldName.create(id + &quot;[&quot; + String.valueOf(i) + &quot;]&quot;), apply);</span>
+
+<span class="fc" id="L117">			result.add(new ContinuousFeature(encoder, derivedField));</span>
+		}
+
+<span class="fc" id="L120">		return result;</span>
+	}
+
+	@Override
+	protected String name(){
+<span class="fc" id="L125">		return &quot;pca&quot;;</span>
+	}
+
+	public Boolean getWhiten(){
+<span class="fc" id="L129">		return (Boolean)get(&quot;whiten&quot;);</span>
+	}
+
+	public List&lt;? extends Number&gt; getComponents(){
+<span class="fc" id="L133">		return getArray(&quot;components_&quot;, Number.class);</span>
+	}
+
+	public int[] getComponentsShape(){
+<span class="fc" id="L137">		return getArrayShape(&quot;components_&quot;, 2);</span>
+	}
+
+	public List&lt;? extends Number&gt; getExplainedVariance(){
+<span class="fc" id="L141">		return getArray(&quot;explained_variance_&quot;, Number.class);</span>
+	}
+
+	public List&lt;? extends Number&gt; getMean(){
+<span class="fc" id="L145">		return getArray(&quot;mean_&quot;, Number.class);</span>
+	}
+
+<span class="fc" id="L148">	private static final AtomicInteger SEQUENCE = new AtomicInteger(1);</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KNeighborsClassifier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.neighbors</a> &gt; <span class="el_source">KNeighborsClassifier.java</span></div><h1>KNeighborsClassifier.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.neighbors;
+
+import java.util.List;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.nearest_neighbor.NearestNeighborModel;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.ValueUtil;
+import sklearn.Classifier;
+
+public class KNeighborsClassifier extends Classifier implements HasNeighbors, HasTrainingData {
+
+	public KNeighborsClassifier(String module, String name){
+<span class="fc" id="L35">		super(module, name);</span>
+<span class="fc" id="L36">	}</span>
+
+	@Override
+	public int getNumberOfFeatures(){
+<span class="fc" id="L40">		int[] shape = getFitXShape();</span>
+
+<span class="fc" id="L42">		return shape[1];</span>
+	}
+
+	@Override
+	public DataType getDataType(){
+<span class="fc" id="L47">		return DataType.FLOAT;</span>
+	}
+
+	@Override
+	public NearestNeighborModel encodeModel(Schema schema){
+<span class="fc" id="L52">		int[] shape = getFitXShape();</span>
+
+<span class="fc" id="L54">		int numberOfInstances = shape[0];</span>
+<span class="fc" id="L55">		int numberOfFeatures = shape[1];</span>
+
+<span class="fc" id="L57">		NearestNeighborModel nearestNeighborModel = KNeighborsUtil.encodeNeighbors(this, MiningFunction.CLASSIFICATION, numberOfInstances, numberOfFeatures, schema)</span>
+<span class="fc" id="L58">			.setCategoricalScoringMethod(NearestNeighborModel.CategoricalScoringMethod.MAJORITY_VOTE);</span>
+
+<span class="fc" id="L60">		return nearestNeighborModel;</span>
+	}
+
+	@Override
+	public String getMetric(){
+<span class="fc" id="L65">		return (String)get(&quot;metric&quot;);</span>
+	}
+
+	@Override
+	public int getNumberOfNeighbors(){
+<span class="fc" id="L70">		return ValueUtil.asInt((Number)get(&quot;n_neighbors&quot;));</span>
+	}
+
+	@Override
+	public int getP(){
+<span class="fc" id="L75">		return ValueUtil.asInt((Number)get(&quot;p&quot;));</span>
+	}
+
+	@Override
+	public String getWeights(){
+<span class="fc" id="L80">		return (String)get(&quot;weights&quot;);</span>
+	}
+
+	@Override
+	public List&lt;? extends Number&gt; getFitX(){
+<span class="fc" id="L85">		return getArray(&quot;_fit_X&quot;, Number.class);</span>
+	}
+
+	public int[] getFitXShape(){
+<span class="fc" id="L89">		return getArrayShape(&quot;_fit_X&quot;, 2);</span>
+	}
+
+	@Override
+	public List&lt;?&gt; getY(){
+<span class="fc" id="L94">		List&lt;? extends Number&gt; y = getArray(&quot;_y&quot;, Number.class);</span>
+
+		final
+<span class="fc" id="L97">		List&lt;?&gt; classes = getClasses();</span>
+
+<span class="fc" id="L99">		Function&lt;Number, Object&gt; function = new Function&lt;Number, Object&gt;(){</span>
+
+			@Override
+			public Object apply(Number number){
+<span class="fc" id="L103">				int index = ValueUtil.asInt(number);</span>
+
+<span class="fc" id="L105">				return classes.get(index);</span>
+			}
+		};
+
+<span class="fc" id="L109">		return Lists.transform(y, function);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

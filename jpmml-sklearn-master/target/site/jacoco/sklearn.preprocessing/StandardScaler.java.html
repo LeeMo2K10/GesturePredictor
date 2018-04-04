@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StandardScaler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.preprocessing</a> &gt; <span class="el_source">StandardScaler.java</span></div><h1>StandardScaler.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.preprocessing;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.dmg.pmml.DerivedField;
+import org.dmg.pmml.Expression;
+import org.jpmml.converter.ContinuousFeature;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.PMMLUtil;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.HasNumberOfFeatures;
+import sklearn.Transformer;
+
+public class StandardScaler extends Transformer implements HasNumberOfFeatures {
+
+	public StandardScaler(String module, String name){
+<span class="fc" id="L38">		super(module, name);</span>
+<span class="fc" id="L39">	}</span>
+
+	@Override
+	public int getNumberOfFeatures(){
+<span class="fc" id="L43">		Boolean withMean = getWithMean();</span>
+<span class="fc" id="L44">		Boolean withStd = getWithStd();</span>
+
+		int[] shape;
+
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">		if(withMean){</span>
+<span class="fc" id="L49">			shape = getMeanShape();</span>
+		} else
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">		if(withStd){</span>
+<span class="nc" id="L53">			shape = getStdShape();</span>
+		} else
+
+		{
+<span class="nc" id="L57">			return -1;</span>
+		}
+
+<span class="fc" id="L60">		return shape[0];</span>
+	}
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L65">		Boolean withMean = getWithMean();</span>
+<span class="fc" id="L66">		Boolean withStd = getWithStd();</span>
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">		List&lt;? extends Number&gt; mean = (withMean ? getMean() : null);</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">		List&lt;? extends Number&gt; std = (withStd ? getStd() : null);</span>
+
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">		if(mean == null &amp;&amp; std == null){</span>
+<span class="fc" id="L72">			return features;</span>
+		}
+
+<span class="fc" id="L75">		ClassDictUtil.checkSize(features, mean, std);</span>
+
+<span class="fc" id="L77">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">		for(int i = 0; i &lt; features.size(); i++){</span>
+<span class="fc" id="L80">			Feature feature = features.get(i);</span>
+
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">			Number meanValue = (withMean ? mean.get(i) : 0d);</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">			Number stdValue = (withStd ? std.get(i) : 1d);</span>
+
+<span class="pc bpc" id="L85" title="1 of 4 branches missed.">			if(ValueUtil.isZero(meanValue) &amp;&amp; ValueUtil.isOne(stdValue)){</span>
+<span class="fc" id="L86">				result.add(feature);</span>
+
+<span class="fc" id="L88">				continue;</span>
+			}
+
+<span class="fc" id="L91">			ContinuousFeature continuousFeature = feature.toContinuousFeature();</span>
+
+			// &quot;($name - mean) / std&quot;
+<span class="fc" id="L94">			Expression expression = continuousFeature.ref();</span>
+
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">			if(!ValueUtil.isZero(meanValue)){</span>
+<span class="fc" id="L97">				expression = PMMLUtil.createApply(&quot;-&quot;, expression, PMMLUtil.createConstant(meanValue));</span>
+			} // End if
+
+<span class="fc bfc" id="L100" title="All 2 branches covered.">			if(!ValueUtil.isOne(stdValue)){</span>
+<span class="fc" id="L101">				expression = PMMLUtil.createApply(&quot;/&quot;, expression, PMMLUtil.createConstant(stdValue));</span>
+			}
+
+<span class="fc" id="L104">			DerivedField derivedField = encoder.createDerivedField(createName(continuousFeature), expression);</span>
+
+<span class="fc" id="L106">			result.add(new ContinuousFeature(encoder, derivedField));</span>
+		}
+
+<span class="fc" id="L109">		return result;</span>
+	}
+
+	public Boolean getWithMean(){
+<span class="fc" id="L113">		return (Boolean)get(&quot;with_mean&quot;);</span>
+	}
+
+	public Boolean getWithStd(){
+<span class="fc" id="L117">		return (Boolean)get(&quot;with_std&quot;);</span>
+	}
+
+	public List&lt;? extends Number&gt; getMean(){
+<span class="fc" id="L121">		return getArray(&quot;mean_&quot;, Number.class);</span>
+	}
+
+	public int[] getMeanShape(){
+<span class="fc" id="L125">		return getArrayShape(&quot;mean_&quot;, 1);</span>
+	}
+
+	public List&lt;? extends Number&gt; getStd(){
+
+		// SkLearn 0.16
+<span class="fc bfc" id="L131" title="All 2 branches covered.">		if(containsKey(&quot;std_&quot;)){</span>
+<span class="fc" id="L132">			return getArray(&quot;std_&quot;, Number.class);</span>
+		}
+
+		// SkLearn 0.17+
+<span class="fc" id="L136">		return getArray(&quot;scale_&quot;, Number.class);</span>
+	}
+
+	public int[] getStdShape(){
+
+		// SkLearn 0.16
+<span class="nc bnc" id="L142" title="All 2 branches missed.">		if(containsKey(&quot;std_&quot;)){</span>
+<span class="nc" id="L143">			return getArrayShape(&quot;std_&quot;, 1);</span>
+		}
+
+		// SkLearn 0.17+
+<span class="nc" id="L147">		return getArrayShape(&quot;scale_&quot;, 1);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

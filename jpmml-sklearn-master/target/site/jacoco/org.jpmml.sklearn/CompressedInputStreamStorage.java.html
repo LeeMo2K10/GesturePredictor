@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompressedInputStreamStorage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">org.jpmml.sklearn</a> &gt; <span class="el_source">CompressedInputStreamStorage.java</span></div><h1>CompressedInputStreamStorage.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.jpmml.sklearn;
+
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
+import java.util.zip.InflaterInputStream;
+
+import com.google.common.io.ByteStreams;
+import com.google.common.io.CountingInputStream;
+
+public class CompressedInputStreamStorage extends InputStreamStorage {
+
+	public CompressedInputStreamStorage(InputStream is) throws IOException {
+<span class="fc" id="L33">		super(init(new PushbackInputStream(is, 2)));</span>
+<span class="fc" id="L34">	}</span>
+
+	static
+	private InputStream init(PushbackInputStream is) throws IOException {
+<span class="fc" id="L38">		byte[] magic = new byte[2];</span>
+
+<span class="fc" id="L40">		ByteStreams.readFully(is, magic);</span>
+
+<span class="fc" id="L42">		is.unread(magic);</span>
+
+		// Joblib 0.10.0 and newer
+<span class="fc bfc" id="L45" title="All 2 branches covered.">		if(magic[0] == 'x'){</span>
+<span class="fc" id="L46">			return initZlib(is);</span>
+		} else
+
+		// Joblib 0.9.4 and earlier
+<span class="pc bpc" id="L50" title="1 of 4 branches missed.">		if(magic[0] == 'Z' &amp;&amp; magic[1] == 'F'){</span>
+<span class="fc" id="L51">			return initCompat(is);</span>
+		} else
+
+		{
+<span class="fc" id="L55">			throw new IOException();</span>
+		}
+	}
+
+	static
+	private InputStream initZlib(PushbackInputStream is){
+<span class="fc" id="L61">		InflaterInputStream zlibIs = new InflaterInputStream(is);</span>
+
+<span class="fc" id="L63">		return zlibIs;</span>
+	}
+
+	static
+	private InputStream initCompat(PushbackInputStream is) throws IOException {
+<span class="fc" id="L68">		byte[] headerBytes = new byte[2 + 19];</span>
+
+<span class="fc" id="L70">		ByteStreams.readFully(is, headerBytes);</span>
+
+<span class="fc" id="L72">		String header = new String(headerBytes);</span>
+
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">		if(!header.startsWith(&quot;ZF0x&quot;)){</span>
+<span class="nc" id="L75">			throw new IOException();</span>
+		}
+
+		// Remove trailing whitespace
+<span class="fc" id="L79">		header = header.trim();</span>
+
+		final
+<span class="fc" id="L82">		long expectedSize = Long.parseLong(header.substring(4), 16);</span>
+
+		// Consume the first byte
+<span class="fc" id="L85">		int firstByte = is.read();</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">		if(firstByte &lt; 0){</span>
+<span class="nc" id="L87">			return is;</span>
+		} // End if
+
+		// If the first byte is not a space character, then make it available for reading again
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">		if(firstByte != '\u0020'){</span>
+<span class="fc" id="L92">			is.unread(firstByte);</span>
+		}
+
+<span class="fc" id="L95">		InflaterInputStream zlibIs = new InflaterInputStream(is);</span>
+
+<span class="fc" id="L97">		InputStream result = new FilterInputStream(new CountingInputStream(zlibIs)){</span>
+
+<span class="fc" id="L99">			private boolean closed = false;</span>
+
+
+			@Override
+			public void close() throws IOException {
+
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">				if(this.closed){</span>
+<span class="nc" id="L106">					return;</span>
+				}
+
+<span class="fc" id="L109">				this.closed = true;</span>
+
+<span class="fc" id="L111">				long size = ((CountingInputStream)super.in).getCount();</span>
+
+<span class="fc" id="L113">				super.close();</span>
+
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">				if(size != expectedSize){</span>
+<span class="nc" id="L116">					throw new IOException(&quot;Expected &quot; + expectedSize + &quot; byte(s) of uncompressed data, got &quot; + size + &quot; byte(s)&quot;);</span>
+				}
+<span class="fc" id="L118">			}</span>
+		};
+
+<span class="fc" id="L121">		return result;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

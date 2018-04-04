@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseLinearClassifier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.linear_model</a> &gt; <span class="el_source">BaseLinearClassifier.java</span></div><h1>BaseLinearClassifier.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.linear_model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.regression.RegressionModel;
+import org.dmg.pmml.regression.RegressionTable;
+import org.jpmml.converter.CMatrixUtil;
+import org.jpmml.converter.CategoricalLabel;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.ModelUtil;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.converter.regression.RegressionModelUtil;
+import sklearn.Classifier;
+import sklearn.ClassifierUtil;
+
+abstract
+public class BaseLinearClassifier extends Classifier {
+
+	public BaseLinearClassifier(String module, String name){
+<span class="fc" id="L42">		super(module, name);</span>
+<span class="fc" id="L43">	}</span>
+
+	@Override
+	public int getNumberOfFeatures(){
+<span class="fc" id="L47">		int[] shape = getCoefShape();</span>
+
+<span class="fc" id="L49">		return shape[1];</span>
+	}
+
+	@Override
+	public RegressionModel encodeModel(Schema schema){
+<span class="fc" id="L54">		int[] shape = getCoefShape();</span>
+
+<span class="fc" id="L56">		int numberOfClasses = shape[0];</span>
+<span class="fc" id="L57">		int numberOfFeatures = shape[1];</span>
+
+<span class="fc" id="L59">		boolean hasProbabilityDistribution = hasProbabilityDistribution();</span>
+
+<span class="fc" id="L61">		List&lt;? extends Number&gt; coef = getCoef();</span>
+<span class="fc" id="L62">		List&lt;? extends Number&gt; intercepts = getIntercept();</span>
+
+<span class="fc" id="L64">		CategoricalLabel categoricalLabel = (CategoricalLabel)schema.getLabel();</span>
+
+<span class="fc" id="L66">		List&lt;Feature&gt; features = schema.getFeatures();</span>
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">		if(numberOfClasses == 1){</span>
+<span class="fc" id="L69">			ClassifierUtil.checkSize(2, categoricalLabel);</span>
+
+<span class="fc" id="L71">			return RegressionModelUtil.createBinaryLogisticClassification(features, ValueUtil.asDoubles(CMatrixUtil.getRow(coef, numberOfClasses, numberOfFeatures, 0)), ValueUtil.asDouble(intercepts.get(0)), RegressionModel.NormalizationMethod.LOGIT, hasProbabilityDistribution, schema);</span>
+		} else
+
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">		if(numberOfClasses &gt;= 3){</span>
+<span class="fc" id="L75">			ClassifierUtil.checkSize(numberOfClasses, categoricalLabel);</span>
+
+<span class="fc" id="L77">			List&lt;RegressionTable&gt; regressionTables = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">			for(int i = 0, rows = categoricalLabel.size(); i &lt; rows; i++){</span>
+<span class="fc" id="L80">				RegressionTable regressionTable = RegressionModelUtil.createRegressionTable(features, ValueUtil.asDoubles(CMatrixUtil.getRow(coef, numberOfClasses, numberOfFeatures, i)), ValueUtil.asDouble(intercepts.get(i)))</span>
+<span class="fc" id="L81">					.setTargetCategory(categoricalLabel.getValue(i));</span>
+
+<span class="fc" id="L83">				regressionTables.add(regressionTable);</span>
+			}
+
+<span class="fc" id="L86">			RegressionModel regressionModel = new RegressionModel(MiningFunction.CLASSIFICATION, ModelUtil.createMiningSchema(categoricalLabel), regressionTables)</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">				.setNormalizationMethod(RegressionModel.NormalizationMethod.LOGIT)</span>
+<span class="fc" id="L88">				.setOutput(hasProbabilityDistribution ? ModelUtil.createProbabilityOutput(DataType.DOUBLE, categoricalLabel) : null);</span>
+
+<span class="fc" id="L90">			return regressionModel;</span>
+		} else
+
+		{
+<span class="nc" id="L94">			throw new IllegalArgumentException();</span>
+		}
+	}
+
+	public List&lt;? extends Number&gt; getCoef(){
+<span class="fc" id="L99">		return getArray(&quot;coef_&quot;, Number.class);</span>
+	}
+
+	public int[] getCoefShape(){
+<span class="fc" id="L103">		return getArrayShape(&quot;coef_&quot;, 2);</span>
+	}
+
+	public List&lt;? extends Number&gt; getIntercept(){
+<span class="fc" id="L107">		return getArray(&quot;intercept_&quot;, Number.class);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

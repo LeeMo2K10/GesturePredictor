@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreeModelFlattener.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">org.jpmml.sklearn.visitors</a> &gt; <span class="el_source">TreeModelFlattener.java</span></div><h1>TreeModelFlattener.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.jpmml.sklearn.visitors;
+
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.PMMLObject;
+import org.dmg.pmml.Predicate;
+import org.dmg.pmml.ScoreDistribution;
+import org.dmg.pmml.SimplePredicate;
+import org.dmg.pmml.True;
+import org.dmg.pmml.VisitorAction;
+import org.dmg.pmml.tree.Node;
+import org.dmg.pmml.tree.TreeModel;
+import org.jpmml.model.visitors.AbstractVisitor;
+
+<span class="fc" id="L38">public class TreeModelFlattener extends AbstractVisitor {</span>
+
+<span class="fc" id="L40">	private MiningFunction miningFunction = null;</span>
+
+
+	@Override
+	public void pushParent(PMMLObject object){
+<span class="fc" id="L45">		super.pushParent(object);</span>
+
+<span class="fc bfc" id="L47" title="All 2 branches covered.">		if(object instanceof TreeModel){</span>
+<span class="fc" id="L48">			handleTreeModelPush((TreeModel)object);</span>
+		}
+<span class="fc" id="L50">	}</span>
+
+	@Override
+	public PMMLObject popParent(){
+<span class="fc" id="L54">		PMMLObject object = super.popParent();</span>
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">		if(object instanceof Node){</span>
+<span class="fc" id="L57">			handleNodePop((Node)object);</span>
+		} else
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">		if(object instanceof TreeModel){</span>
+<span class="fc" id="L61">			handleTreeModelPop((TreeModel)object);</span>
+		}
+
+<span class="fc" id="L64">		return object;</span>
+	}
+
+	@Override
+	public VisitorAction visit(Node node){
+
+<span class="fc bfc" id="L70" title="All 2 branches covered.">		if(node.hasNodes()){</span>
+<span class="fc" id="L71">			List&lt;Node&gt; children = node.getNodes();</span>
+
+			children:
+			while(true){
+<span class="fc" id="L75">				ListIterator&lt;Node&gt; childIt = children.listIterator();</span>
+
+				grandChildren:
+<span class="fc bfc" id="L78" title="All 2 branches covered.">				while(childIt.hasNext()){</span>
+<span class="fc" id="L79">					Node child = childIt.next();</span>
+
+<span class="fc" id="L81">					Iterator&lt;Node&gt; grandChildIt = getChildren(child);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">					if(grandChildIt == null){</span>
+<span class="fc" id="L83">						continue grandChildren;</span>
+					}
+
+<span class="fc" id="L86">					childIt.remove();</span>
+
+<span class="fc bfc" id="L88" title="All 2 branches covered.">					while(grandChildIt.hasNext()){</span>
+<span class="fc" id="L89">						Node grandChild = grandChildIt.next();</span>
+
+<span class="fc" id="L91">						grandChildIt.remove();</span>
+
+<span class="fc" id="L93">						childIt.add(grandChild);</span>
+<span class="fc" id="L94">					}</span>
+
+<span class="fc" id="L96">					childIt.add(child);</span>
+
+<span class="fc" id="L98">					continue children;</span>
+				}
+
+				break;
+			}
+		}
+
+<span class="fc" id="L105">		return super.visit(node);</span>
+	}
+
+	@Override
+	public VisitorAction visit(TreeModel treeModel){
+<span class="fc" id="L110">		treeModel.setSplitCharacteristic(TreeModel.SplitCharacteristic.MULTI_SPLIT);</span>
+
+<span class="fc" id="L112">		return super.visit(treeModel);</span>
+	}
+
+	private void handleNodePop(Node node){
+<span class="fc" id="L116">		String score = node.getScore();</span>
+<span class="fc" id="L117">		Predicate predicate = node.getPredicate();</span>
+
+<span class="fc bfc" id="L119" title="All 2 branches covered.">		if(predicate instanceof True){</span>
+<span class="fc" id="L120">			Node parentNode = getParentNode();</span>
+
+<span class="fc bfc" id="L122" title="All 2 branches covered.">			if(parentNode == null){</span>
+<span class="fc" id="L123">				return;</span>
+			}
+
+<span class="fc" id="L126">			List&lt;Node&gt; parentChildren = parentNode.getNodes();</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">			if(parentChildren.size() != 1){</span>
+<span class="fc" id="L128">				return;</span>
+			}
+
+<span class="fc" id="L131">			boolean success = parentChildren.remove(node);</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">			if(!success){</span>
+<span class="nc" id="L133">				throw new IllegalArgumentException();</span>
+			}
+
+<span class="fc" id="L136">			String parentScore = parentNode.getScore();</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">			if(parentScore != null){</span>
+<span class="nc" id="L138">				throw new IllegalArgumentException();</span>
+			}
+
+<span class="fc" id="L141">			parentNode.setScore(score);</span>
+
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">			if((MiningFunction.REGRESSION).equals(this.miningFunction)){</span>
+				// Ignored
+			} else
+
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">			if((MiningFunction.CLASSIFICATION).equals(this.miningFunction)){</span>
+<span class="fc" id="L148">				Double recordCount = node.getRecordCount();</span>
+<span class="fc" id="L149">				List&lt;ScoreDistribution&gt; scoreDistributions = node.getScoreDistributions();</span>
+
+<span class="fc" id="L151">				Double parentRecordCount = parentNode.getRecordCount();</span>
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">				if(parentRecordCount != null){</span>
+<span class="nc" id="L153">					throw new IllegalArgumentException();</span>
+				}
+
+<span class="fc" id="L156">				parentNode.setRecordCount(recordCount);</span>
+
+<span class="fc" id="L158">				List&lt;ScoreDistribution&gt; parentScoreDistributions = parentNode.getScoreDistributions();</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">				if(parentScoreDistributions.size() != 0){</span>
+<span class="nc" id="L160">					throw new IllegalArgumentException();</span>
+				}
+
+<span class="fc" id="L163">				parentScoreDistributions.addAll(scoreDistributions);</span>
+<span class="fc" id="L164">			} else</span>
+
+			{
+<span class="nc" id="L167">				throw new IllegalArgumentException();</span>
+			}
+		}
+<span class="fc" id="L170">	}</span>
+
+	private void handleTreeModelPush(TreeModel treeModel){
+<span class="fc" id="L173">		this.miningFunction = treeModel.getMiningFunction();</span>
+<span class="fc" id="L174">	}</span>
+
+	private void handleTreeModelPop(TreeModel treeModel){
+<span class="fc" id="L177">		this.miningFunction = null;</span>
+<span class="fc" id="L178">	}</span>
+
+	private Node getParentNode(){
+<span class="fc" id="L181">		Deque&lt;PMMLObject&gt; parents = getParents();</span>
+
+<span class="fc" id="L183">		PMMLObject parent = parents.peekFirst();</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">		if(parent instanceof Node){</span>
+<span class="fc" id="L185">			return (Node)parent;</span>
+		}
+
+<span class="fc" id="L188">		return null;</span>
+	}
+
+	static
+	private Iterator&lt;Node&gt; getChildren(Node node){
+<span class="fc" id="L193">		Predicate predicate = node.getPredicate();</span>
+
+<span class="fc bfc" id="L195" title="All 2 branches covered.">		if(!(predicate instanceof SimplePredicate)){</span>
+<span class="fc" id="L196">			return null;</span>
+		}
+
+<span class="fc" id="L199">		SimplePredicate simplePredicate = (SimplePredicate)predicate;</span>
+
+<span class="fc" id="L201">		FieldName name = simplePredicate.getField();</span>
+<span class="fc" id="L202">		SimplePredicate.Operator operator = simplePredicate.getOperator();</span>
+
+<span class="fc bfc" id="L204" title="All 2 branches covered.">		if(!(SimplePredicate.Operator.LESS_OR_EQUAL).equals(operator)){</span>
+<span class="fc" id="L205">			return null;</span>
+		} // End if
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">		if(node.hasNodes()){</span>
+<span class="fc" id="L209">			List&lt;Node&gt; children = node.getNodes();</span>
+
+<span class="fc" id="L211">			int endPos = 0;</span>
+
+<span class="fc bfc" id="L213" title="All 2 branches covered.">			for(Node child : children){</span>
+
+<span class="fc bfc" id="L215" title="All 2 branches covered.">				if(!checkPredicate(child, name, operator)){</span>
+<span class="fc" id="L216">					break;</span>
+				}
+
+<span class="fc" id="L219">				endPos++;</span>
+<span class="fc" id="L220">			}</span>
+
+<span class="fc bfc" id="L222" title="All 2 branches covered.">			if(endPos &gt; 0){</span>
+<span class="fc" id="L223">				return (children.subList(0, endPos)).iterator();</span>
+			}
+
+<span class="fc" id="L226">			return null;</span>
+		}
+
+<span class="fc" id="L229">		return null;</span>
+	}
+
+	static
+	private boolean checkPredicate(Node node, FieldName name, SimplePredicate.Operator operator){
+<span class="fc" id="L234">		Predicate predicate = node.getPredicate();</span>
+
+<span class="fc bfc" id="L236" title="All 2 branches covered.">		if(predicate instanceof SimplePredicate){</span>
+<span class="fc" id="L237">			SimplePredicate simplePredicate = (SimplePredicate)predicate;</span>
+
+<span class="pc bpc" id="L239" title="1 of 4 branches missed.">			return (simplePredicate.getField()).equals(name) &amp;&amp; (simplePredicate.getOperator()).equals(operator);</span>
+		}
+
+<span class="fc" id="L242">		return false;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

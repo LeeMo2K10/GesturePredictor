@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TfidfVectorizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.feature_extraction.text</a> &gt; <span class="el_source">TfidfVectorizer.java</span></div><h1>TfidfVectorizer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.feature_extraction.text;
+
+import java.util.List;
+
+import numpy.DType;
+import org.dmg.pmml.Apply;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.DefineFunction;
+import org.dmg.pmml.Expression;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.FieldRef;
+import org.dmg.pmml.ParameterField;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.PMMLUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+
+public class TfidfVectorizer extends CountVectorizer {
+
+	public TfidfVectorizer(String module, String name){
+<span class="fc" id="L38">		super(module, name);</span>
+<span class="fc" id="L39">	}</span>
+
+	@Override
+	public DType getDType(){
+<span class="fc" id="L43">		DType dtype = super.getDType();</span>
+
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">		if(dtype != null){</span>
+<span class="fc" id="L46">			TfidfTransformer transformer = getTransformer();</span>
+
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">			if(transformer != null){</span>
+<span class="fc" id="L49">				DataType dataType = dtype.getDataType();</span>
+
+<span class="pc bpc" id="L51" title="2 of 3 branches missed.">				switch(dataType){</span>
+					case BOOLEAN:
+					case INTEGER:
+<span class="nc" id="L54">						return null;</span>
+					case FLOAT:
+					case DOUBLE:
+<span class="fc" id="L57">						return dtype;</span>
+					default:
+						break;
+				}
+			}
+		}
+
+<span class="nc" id="L64">		return dtype;</span>
+	}
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L69">		TfidfTransformer transformer = getTransformer();</span>
+
+<span class="fc" id="L71">		String norm = transformer.getNorm();</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">		if(norm != null){</span>
+<span class="nc" id="L73">			throw new IllegalArgumentException(norm);</span>
+		}
+
+<span class="fc" id="L76">		return super.encodeFeatures(features, encoder);</span>
+	}
+
+	@Override
+	public DefineFunction encodeDefineFunction(){
+<span class="fc" id="L81">		TfidfTransformer transformer = getTransformer();</span>
+
+<span class="fc" id="L83">		DefineFunction defineFunction = super.encodeDefineFunction();</span>
+
+<span class="fc" id="L85">		Expression expression = defineFunction.getExpression();</span>
+
+<span class="fc" id="L87">		Boolean sublinearTf = transformer.getSublinearTf();</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">		if(sublinearTf){</span>
+<span class="nc" id="L89">			expression = PMMLUtil.createApply(&quot;+&quot;, PMMLUtil.createApply(&quot;log&quot;, expression), PMMLUtil.createConstant(1d));</span>
+		} // End if
+
+<span class="fc" id="L92">		Boolean useIdf = transformer.getUseIdf();</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">		if(useIdf){</span>
+<span class="fc" id="L94">			ParameterField weight = new ParameterField(FieldName.create(&quot;weight&quot;));</span>
+
+<span class="fc" id="L96">			defineFunction.addParameterFields(weight);</span>
+
+<span class="fc" id="L98">			expression = PMMLUtil.createApply(&quot;*&quot;, expression, new FieldRef(weight.getName()));</span>
+		}
+
+<span class="fc" id="L101">		defineFunction.setExpression(expression);</span>
+
+<span class="fc" id="L103">		return defineFunction;</span>
+	}
+
+	@Override
+	public Apply encodeApply(String function, Feature feature, int index, String term){
+<span class="fc" id="L108">		TfidfTransformer transformer = getTransformer();</span>
+
+<span class="fc" id="L110">		Apply apply = super.encodeApply(function, feature, index, term);</span>
+
+<span class="fc" id="L112">		Boolean useIdf = transformer.getUseIdf();</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">		if(useIdf){</span>
+<span class="fc" id="L114">			Number weight = transformer.getWeight(index);</span>
+
+<span class="fc" id="L116">			apply.addExpressions(PMMLUtil.createConstant(weight));</span>
+		}
+
+<span class="fc" id="L119">		return apply;</span>
+	}
+
+	@Override
+	public String functionName(){
+<span class="fc" id="L124">		TfidfTransformer transformer = getTransformer();</span>
+
+<span class="fc" id="L126">		Boolean useIdf = transformer.getUseIdf();</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">		if(useIdf){</span>
+<span class="fc" id="L128">			return &quot;tf-idf&quot;;</span>
+		}
+
+<span class="nc" id="L131">		return super.functionName();</span>
+	}
+
+	public TfidfTransformer getTransformer(){
+<span class="fc" id="L135">		return (TfidfTransformer)get(&quot;_tfidf&quot;);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

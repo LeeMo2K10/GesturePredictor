@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PickleUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">org.jpmml.sklearn</a> &gt; <span class="el_source">PickleUtil.java</span></div><h1>PickleUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.jpmml.sklearn;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.Properties;
+import java.util.Set;
+
+import joblib.NDArrayWrapperConstructor;
+import joblib.NumpyArrayWrapper;
+import net.razorvine.pickle.Opcodes;
+import net.razorvine.pickle.Unpickler;
+import numpy.core.NDArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class PickleUtil {
+
+<span class="nc" id="L40">	private PickleUtil(){</span>
+<span class="nc" id="L41">	}</span>
+
+	static
+	public Storage createStorage(File file){
+
+		try {
+<span class="nc" id="L47">			InputStream is = new FileInputStream(file);</span>
+
+			try {
+<span class="nc" id="L50">				return new CompressedInputStreamStorage(is);</span>
+<span class="nc" id="L51">			} catch(IOException ioe){</span>
+<span class="nc" id="L52">				is.close();</span>
+			}
+<span class="nc" id="L54">		} catch(IOException ioe){</span>
+			// Ignored
+<span class="nc" id="L56">		}</span>
+
+<span class="nc" id="L58">		return new FileStorage(file);</span>
+	}
+
+	static
+	public Object unpickle(Storage storage) throws IOException {
+<span class="fc" id="L63">		ObjectConstructor[] constructors = {</span>
+			new NDArrayWrapperConstructor(&quot;joblib.numpy_pickle&quot;, &quot;NDArrayWrapper&quot;, storage),
+			new NDArrayWrapperConstructor(&quot;sklearn.externals.joblib.numpy_pickle&quot;, &quot;NDArrayWrapper&quot;, storage),
+		};
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">		for(ObjectConstructor constructor : constructors){</span>
+<span class="fc" id="L69">			Unpickler.registerConstructor(constructor.getModule(), constructor.getName(), constructor);</span>
+		}
+
+<span class="pc" id="L72">		try(final InputStream is = storage.getObject()){</span>
+<span class="fc" id="L73">			Unpickler unpickler = new Unpickler(){</span>
+
+				@Override
+				protected Object dispatch(short key) throws IOException {
+<span class="fc" id="L77">					Object result = super.dispatch(key);;</span>
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">					if(key == Opcodes.BUILD){</span>
+<span class="fc" id="L80">						Object head = super.stack.peek();</span>
+
+						// Modify the stack by replacing NumpyArrayWrapper with NDArray
+<span class="fc bfc" id="L83" title="All 2 branches covered.">						if(head instanceof NumpyArrayWrapper){</span>
+<span class="fc" id="L84">							NumpyArrayWrapper arrayWrapper = (NumpyArrayWrapper)head;</span>
+
+<span class="fc" id="L86">							super.stack.pop();</span>
+
+<span class="fc" id="L88">							NDArray array = arrayWrapper.toArray(is);</span>
+
+<span class="fc" id="L90">							super.stack.add(array);</span>
+						}
+					}
+
+<span class="fc" id="L94">					return result;</span>
+				}
+			};
+
+<span class="fc" id="L98">			return unpickler.load(is);</span>
+<span class="pc bpc" id="L99" title="6 of 8 branches missed.">		}</span>
+	}
+
+	static
+	private void init(){
+<span class="fc" id="L104">		Thread thread = Thread.currentThread();</span>
+
+<span class="fc" id="L106">		ClassLoader classLoader = thread.getContextClassLoader();</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">		if(classLoader == null){</span>
+<span class="nc" id="L108">			classLoader = ClassLoader.getSystemClassLoader();</span>
+		}
+
+		Enumeration&lt;URL&gt; urls;
+
+		try {
+<span class="fc" id="L114">			urls = classLoader.getResources(&quot;META-INF/sklearn2pmml.properties&quot;);</span>
+<span class="nc" id="L115">		} catch(IOException ioe){</span>
+<span class="nc" id="L116">			logger.warn(&quot;Failed to find resources&quot;, ioe);</span>
+
+<span class="nc" id="L118">			return;</span>
+<span class="fc" id="L119">		}</span>
+
+<span class="fc bfc" id="L121" title="All 2 branches covered.">		while(urls.hasMoreElements()){</span>
+<span class="fc" id="L122">			URL url = urls.nextElement();</span>
+
+<span class="fc" id="L124">			logger.debug(&quot;Loading resource {}&quot;, url);</span>
+
+<span class="pc" id="L126">			try(InputStream is = url.openStream()){</span>
+<span class="fc" id="L127">				Properties properties = new Properties();</span>
+<span class="fc" id="L128">				properties.load(is);</span>
+
+<span class="fc" id="L130">				init(classLoader, properties);</span>
+<span class="pc bpc" id="L131" title="6 of 8 branches missed.">			} catch(IOException ioe){</span>
+<span class="nc" id="L132">				logger.warn(&quot;Failed to load resource&quot;, ioe);</span>
+<span class="fc" id="L133">			}</span>
+<span class="fc" id="L134">		}</span>
+<span class="fc" id="L135">	}</span>
+
+	static
+	private void init(ClassLoader classLoader, Properties properties){
+
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">		if(properties.isEmpty()){</span>
+<span class="nc" id="L141">			return;</span>
+		}
+
+<span class="fc" id="L144">		Set&lt;String&gt; keys = properties.stringPropertyNames();</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">		for(String key : keys){</span>
+<span class="fc" id="L146">			String value = properties.getProperty(key);</span>
+
+<span class="pc bpc" id="L148" title="1 of 4 branches missed.">			if(value == null || (&quot;&quot;).equals(value)){</span>
+<span class="fc" id="L149">				value = key;</span>
+			}
+
+<span class="fc" id="L152">			logger.debug(&quot;Mapping Python class {} to Java class {}&quot;, key, value);</span>
+
+<span class="fc" id="L154">			int dot = key.lastIndexOf('.');</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">			if(dot &lt; 0){</span>
+<span class="nc" id="L156">				logger.warn(&quot;Failed to identify the module and name parts of Python class {}&quot;, key);</span>
+
+<span class="nc" id="L158">				continue;</span>
+			}
+
+<span class="fc" id="L161">			String module = key.substring(0, dot);</span>
+<span class="fc" id="L162">			String name = key.substring(dot + 1);</span>
+
+			Class&lt;?&gt; clazz;
+
+			try {
+<span class="fc" id="L167">				clazz = classLoader.loadClass(value);</span>
+<span class="nc" id="L168">			} catch(ClassNotFoundException cnfe){</span>
+<span class="nc" id="L169">				logger.warn(&quot;Failed to load Java class {}&quot;, value);</span>
+
+<span class="nc" id="L171">				continue;</span>
+<span class="fc" id="L172">			}</span>
+
+			ObjectConstructor constructor;
+
+<span class="fc bfc" id="L176" title="All 2 branches covered.">			if((CClassDict.class).isAssignableFrom(clazz)){</span>
+<span class="fc" id="L177">				constructor = new ExtensionObjectConstructor(module, name, (Class&lt;? extends CClassDict&gt;)clazz);</span>
+			} else
+
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">			if((PyClassDict.class).isAssignableFrom(clazz)){</span>
+<span class="fc" id="L181">				constructor = new ObjectConstructor(module, name, (Class&lt;? extends PyClassDict&gt;)clazz);</span>
+			} else
+
+			{
+<span class="nc" id="L185">				logger.warn(&quot;Failed to identify the type of Java class {}&quot;, value);</span>
+
+<span class="nc" id="L187">				continue;</span>
+			}
+
+<span class="fc" id="L190">			Unpickler.registerConstructor(constructor.getModule(), constructor.getName(), constructor);</span>
+<span class="fc" id="L191">		}</span>
+<span class="fc" id="L192">	}</span>
+
+<span class="fc" id="L194">	private static final Logger logger = LoggerFactory.getLogger(PickleUtil.class);</span>
+
+	static {
+<span class="fc" id="L197">		PickleUtil.init();</span>
+<span class="fc" id="L198">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PyClassDict.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">org.jpmml.sklearn</a> &gt; <span class="el_source">PyClassDict.java</span></div><h1>PyClassDict.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.jpmml.sklearn;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import com.google.common.collect.Lists;
+import net.razorvine.pickle.objects.ClassDict;
+
+abstract
+public class PyClassDict extends ClassDict {
+
+	public PyClassDict(String module, String name){
+<span class="fc" id="L32">		super(module, name);</span>
+<span class="fc" id="L33">	}</span>
+
+	public &lt;E&gt; E get(final String name, Class&lt;? extends E&gt; clazz){
+<span class="fc" id="L36">		Object value = get(name);</span>
+
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">		if(value == null){</span>
+
+<span class="nc bnc" id="L40" title="All 2 branches missed.">			if(!containsKey(name)){</span>
+<span class="nc" id="L41">				throw new IllegalArgumentException(&quot;Attribute \'&quot; + ClassDictUtil.formatMember(this, name) + &quot;\' not set&quot;);</span>
+			}
+
+<span class="nc" id="L44">			throw new IllegalArgumentException(&quot;Attribute \'&quot; + ClassDictUtil.formatMember(this, name) + &quot;\' has a missing (None/null) value&quot;);</span>
+		}
+
+<span class="fc" id="L47">		CastFunction&lt;E&gt; castFunction = new CastFunction&lt;E&gt;(clazz){</span>
+
+			@Override
+			protected String formatMessage(Object object){
+<span class="nc" id="L51">				return &quot;Attribute \'&quot; + ClassDictUtil.formatMember(PyClassDict.this, name) + &quot;\' has an unsupported value (&quot; + ClassDictUtil.formatClass(object) + &quot;)&quot;;</span>
+			}
+		};
+
+<span class="fc" id="L55">		return castFunction.apply(value);</span>
+	}
+
+	public List&lt;?&gt; getArray(String name){
+<span class="fc" id="L59">		Object object = get(name);</span>
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">		if(object instanceof HasArray){</span>
+<span class="fc" id="L62">			HasArray hasArray = (HasArray)object;</span>
+
+<span class="fc" id="L64">			return hasArray.getArrayContent();</span>
+		} // End if
+
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">		if(object instanceof Number){</span>
+<span class="fc" id="L68">			return Collections.singletonList(object);</span>
+		}
+
+<span class="nc" id="L71">		throw new IllegalArgumentException(&quot;The value of \'&quot; + ClassDictUtil.formatMember(this, name) + &quot;\' attribute (&quot; + ClassDictUtil.formatClass(object) + &quot;) is not a supported array type&quot;);</span>
+	}
+
+	public &lt;E&gt; List&lt;? extends E&gt; getArray(final String name, Class&lt;? extends E&gt; clazz){
+<span class="fc" id="L75">		List&lt;?&gt; values = getArray(name);</span>
+
+<span class="fc" id="L77">		CastFunction&lt;E&gt; castFunction = new CastFunction&lt;E&gt;(clazz){</span>
+
+			@Override
+			protected String formatMessage(Object object){
+<span class="nc" id="L81">				return &quot;Array attribute \'&quot; + ClassDictUtil.formatMember(PyClassDict.this, name) + &quot;\' contains an unsupported value (&quot; + ClassDictUtil.formatClass(object) + &quot;)&quot;;</span>
+			}
+		};
+
+<span class="fc" id="L85">		return Lists.transform(values, castFunction);</span>
+	}
+
+	public int[] getArrayShape(String name){
+<span class="fc" id="L89">		Object object = get(name);</span>
+
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">		if(object instanceof HasArray){</span>
+<span class="fc" id="L92">			HasArray hasArray = (HasArray)object;</span>
+
+<span class="fc" id="L94">			return hasArray.getArrayShape();</span>
+		} // End if
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">		if(object instanceof Number){</span>
+<span class="nc" id="L98">			return new int[]{1};</span>
+		}
+
+<span class="nc" id="L101">		throw new IllegalArgumentException(&quot;The value of \'&quot; + ClassDictUtil.formatMember(this, name) + &quot;\' attribute (&quot; + ClassDictUtil.formatClass(object) +&quot;) is not a supported array type&quot;);</span>
+	}
+
+	public int[] getArrayShape(String name, int length){
+<span class="fc" id="L105">		int[] shape = getArrayShape(name);</span>
+
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">		if(shape.length != length){</span>
+<span class="nc" id="L108">			throw new IllegalArgumentException(&quot;Expected &quot; + length + &quot;-dimensional array, got &quot; + shape.length + &quot;-dimensional (&quot; + Arrays.toString(shape) + &quot;) array&quot;);</span>
+		}
+
+<span class="fc" id="L111">		return shape;</span>
+	}
+
+	public List&lt;?&gt; getList(String name){
+<span class="fc" id="L115">		return get(name, List.class);</span>
+	}
+
+	public &lt;E&gt; List&lt;? extends E&gt; getList(final String name, Class&lt;? extends E&gt; clazz){
+<span class="fc" id="L119">		List&lt;?&gt; values = getList(name);</span>
+
+<span class="fc" id="L121">		CastFunction&lt;E&gt; castFunction = new CastFunction&lt;E&gt;(clazz){</span>
+
+			@Override
+			protected String formatMessage(Object object){
+<span class="nc" id="L125">				return &quot;List attribute \'&quot; + ClassDictUtil.formatMember(PyClassDict.this, name) + &quot;\' contains an unsupported value (&quot; + ClassDictUtil.formatClass(object) + &quot;)&quot;;</span>
+			}
+		};
+
+<span class="fc" id="L129">		return Lists.transform(values, castFunction);</span>
+	}
+
+	public List&lt;Object[]&gt; getTupleList(String name){
+<span class="fc" id="L133">		return (List)getList(name, Object[].class);</span>
+	}
+
+	public Object getOption(String key, Object defaultValue){
+<span class="fc" id="L137">		Object value = get(key);</span>
+
+<span class="fc bfc" id="L139" title="All 2 branches covered.">		if(value == null){</span>
+<span class="fc" id="L140">			return defaultValue;</span>
+		}
+
+<span class="fc" id="L143">		return value;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

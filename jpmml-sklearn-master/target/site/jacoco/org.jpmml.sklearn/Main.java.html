@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Main.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">org.jpmml.sklearn</a> &gt; <span class="el_source">Main.java</span></div><h1>Main.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.jpmml.sklearn;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
+import org.dmg.pmml.PMML;
+import org.jpmml.model.MetroJAXBUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sklearn.Estimator;
+import sklearn.pipeline.Pipeline;
+import sklearn2pmml.PMMLPipeline;
+
+<span class="nc" id="L38">public class Main {</span>
+
+<span class="nc" id="L40">	@Parameter (</span>
+		names = &quot;--help&quot;,
+		description = &quot;Show the list of configuration options and exit&quot;,
+		help = true
+	)
+	private boolean help = false;
+
+<span class="nc" id="L47">	@Parameter (</span>
+		names = {&quot;--pkl-pipeline-input&quot;, &quot;--pkl-input&quot;},
+		description = &quot;Pickle input file&quot;,
+		required = true
+	)
+	private File input = null;
+
+<span class="nc" id="L54">	@Parameter (</span>
+		names = &quot;--pmml-output&quot;,
+		description = &quot;PMML output file&quot;,
+		required = true
+	)
+	private File output = null;
+
+
+	static
+	public void main(String... args) throws Exception {
+<span class="nc" id="L64">		Main main = new Main();</span>
+
+<span class="nc" id="L66">		JCommander commander = new JCommander(main);</span>
+<span class="nc" id="L67">		commander.setProgramName(Main.class.getName());</span>
+
+		try {
+<span class="nc" id="L70">			commander.parse(args);</span>
+<span class="nc" id="L71">		} catch(ParameterException pe){</span>
+<span class="nc" id="L72">			StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L74">			sb.append(pe.toString());</span>
+<span class="nc" id="L75">			sb.append(&quot;\n&quot;);</span>
+
+<span class="nc" id="L77">			commander.usage(sb);</span>
+
+<span class="nc" id="L79">			System.err.println(sb.toString());</span>
+
+<span class="nc" id="L81">			System.exit(-1);</span>
+<span class="nc" id="L82">		}</span>
+
+<span class="nc bnc" id="L84" title="All 2 branches missed.">		if(main.help){</span>
+<span class="nc" id="L85">			StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L87">			commander.usage(sb);</span>
+
+<span class="nc" id="L89">			System.out.println(sb.toString());</span>
+
+<span class="nc" id="L91">			System.exit(0);</span>
+		}
+
+<span class="nc" id="L94">		main.run();</span>
+<span class="nc" id="L95">	}</span>
+
+	public void run() throws Exception {
+		Object object;
+
+<span class="nc" id="L100">		try(Storage storage = PickleUtil.createStorage(this.input)){</span>
+<span class="nc" id="L101">			logger.info(&quot;Parsing PKL..&quot;);</span>
+
+<span class="nc" id="L103">			long start = System.currentTimeMillis();</span>
+<span class="nc" id="L104">			object = PickleUtil.unpickle(storage);</span>
+<span class="nc" id="L105">			long end = System.currentTimeMillis();</span>
+
+<span class="nc" id="L107">			logger.info(&quot;Parsed PKL in {} ms.&quot;, (end - start));</span>
+<span class="nc bnc" id="L108" title="All 8 branches missed.">		} catch(Exception e){</span>
+<span class="nc" id="L109">			logger.error(&quot;Failed to parse PKL&quot;, e);</span>
+
+<span class="nc" id="L111">			throw e;</span>
+<span class="nc" id="L112">		}</span>
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">		if(!(object instanceof PMMLPipeline)){</span>
+
+			// Create a single- or multi-step PMMLPipeline from a Pipeline
+<span class="nc bnc" id="L117" title="All 2 branches missed.">			if(object instanceof Pipeline){</span>
+<span class="nc" id="L118">				Pipeline pipeline = (Pipeline)object;</span>
+
+<span class="nc" id="L120">				object = new PMMLPipeline()</span>
+<span class="nc" id="L121">					.setSteps((List)pipeline.getSteps());</span>
+<span class="nc" id="L122">			} else</span>
+
+			// Create a single-step PMMLPipeline from an Estimator
+<span class="nc bnc" id="L125" title="All 2 branches missed.">			if(object instanceof Estimator){</span>
+<span class="nc" id="L126">				Estimator estimator = (Estimator)object;</span>
+
+<span class="nc" id="L128">				object = new PMMLPipeline()</span>
+<span class="nc" id="L129">					.setSteps(Collections.&lt;Object[]&gt;singletonList(new Object[]{&quot;estimator&quot;, estimator}));</span>
+<span class="nc" id="L130">			} else</span>
+
+			{
+<span class="nc" id="L133">				throw new IllegalArgumentException(&quot;The object (&quot; + ClassDictUtil.formatClass(object) + &quot;) is not a PMMLPipeline&quot;);</span>
+			}
+		}
+
+<span class="nc" id="L137">		PMMLPipeline pipeline = (PMMLPipeline)object;</span>
+
+		PMML pmml;
+
+		try {
+<span class="nc" id="L142">			logger.info(&quot;Converting..&quot;);</span>
+
+<span class="nc" id="L144">			long begin = System.currentTimeMillis();</span>
+<span class="nc" id="L145">			pmml = pipeline.encodePMML();</span>
+<span class="nc" id="L146">			long end = System.currentTimeMillis();</span>
+
+<span class="nc" id="L148">			logger.info(&quot;Converted in {} ms.&quot;, (end - begin));</span>
+<span class="nc" id="L149">		} catch(Exception e){</span>
+<span class="nc" id="L150">			logger.error(&quot;Failed to convert&quot;, e);</span>
+
+<span class="nc" id="L152">			throw e;</span>
+<span class="nc" id="L153">		}</span>
+
+<span class="nc" id="L155">		try(OutputStream os = new FileOutputStream(this.output)){</span>
+<span class="nc" id="L156">			logger.info(&quot;Marshalling PMML..&quot;);</span>
+
+<span class="nc" id="L158">			long start = System.currentTimeMillis();</span>
+<span class="nc" id="L159">			MetroJAXBUtil.marshalPMML(pmml, os);</span>
+<span class="nc" id="L160">			long end = System.currentTimeMillis();</span>
+
+<span class="nc" id="L162">			logger.info(&quot;Marshalled PMML in {} ms.&quot;, (end - start));</span>
+<span class="nc bnc" id="L163" title="All 8 branches missed.">		} catch(Exception e){</span>
+<span class="nc" id="L164">			logger.error(&quot;Failed to marshal PMML&quot;, e);</span>
+
+<span class="nc" id="L166">			throw e;</span>
+<span class="nc" id="L167">		}</span>
+<span class="nc" id="L168">	}</span>
+
+	public File getInput(){
+<span class="nc" id="L171">		return this.input;</span>
+	}
+
+	public void setInput(File input){
+<span class="nc" id="L175">		this.input = input;</span>
+<span class="nc" id="L176">	}</span>
+
+	public File getOutput(){
+<span class="nc" id="L179">		return this.output;</span>
+	}
+
+	public void setOutput(File output){
+<span class="nc" id="L183">		this.output = output;</span>
+<span class="nc" id="L184">	}</span>
+
+<span class="nc" id="L186">	private static final Logger logger = LoggerFactory.getLogger(Main.class);</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

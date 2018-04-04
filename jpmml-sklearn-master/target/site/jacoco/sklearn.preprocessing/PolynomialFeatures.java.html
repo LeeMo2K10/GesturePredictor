@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PolynomialFeatures.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.preprocessing</a> &gt; <span class="el_source">PolynomialFeatures.java</span></div><h1>PolynomialFeatures.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.preprocessing;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.FieldName;
+import org.jpmml.converter.BinaryFeature;
+import org.jpmml.converter.ConstantFeature;
+import org.jpmml.converter.ContinuousFeature;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.FeatureUtil;
+import org.jpmml.converter.InteractionFeature;
+import org.jpmml.converter.PowerFeature;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.HasNumberOfFeatures;
+import sklearn.Transformer;
+
+public class PolynomialFeatures extends Transformer implements HasNumberOfFeatures {
+
+	public PolynomialFeatures(String module, String name){
+<span class="fc" id="L46">		super(module, name);</span>
+<span class="fc" id="L47">	}</span>
+
+	@Override
+	public int getNumberOfFeatures(){
+<span class="fc" id="L51">		return getNumberOfInputFeatures();</span>
+	}
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, final SkLearnEncoder encoder){
+<span class="fc" id="L56">		int numberOfInputFeatures = getNumberOfInputFeatures();</span>
+<span class="fc" id="L57">		int numberOfOutputFeatures = getNumberOfOutputFeatures();</span>
+
+<span class="fc" id="L59">		ClassDictUtil.checkSize(numberOfInputFeatures, features);</span>
+
+		final
+<span class="fc" id="L62">		int degree = getDegree();</span>
+
+<span class="fc" id="L64">		boolean includeBias = getIncludeBias();</span>
+<span class="fc" id="L65">		boolean interactionOnly = getInteractionOnly();</span>
+
+<span class="fc" id="L67">		List&lt;int[]&gt; powers = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L69" title="All 4 branches covered.">		for(int i = (includeBias ? 0 : 1); i &lt;= degree; i++){</span>
+			List&lt;int[]&gt; degreePowers;
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">			if(interactionOnly){</span>
+<span class="fc" id="L73">				degreePowers = combinations(numberOfInputFeatures, i);</span>
+			} else
+
+			{
+<span class="fc" id="L77">				degreePowers = combinations_with_replacement(numberOfInputFeatures, i);</span>
+			}
+
+<span class="fc" id="L80">			powers.addAll(degreePowers);</span>
+		}
+
+<span class="fc" id="L83">		ClassDictUtil.checkSize(numberOfOutputFeatures, powers);</span>
+
+<span class="fc" id="L85">		Feature unitFeature = new ConstantFeature(encoder, 1.0d);</span>
+
+<span class="fc" id="L87">		Function&lt;Feature, Feature[]&gt; function = new Function&lt;Feature, Feature[]&gt;(){</span>
+
+			@Override
+			public Feature[] apply(Feature feature){
+<span class="fc" id="L91">				Feature[] features = new Feature[degree];</span>
+
+<span class="fc bfc" id="L93" title="All 2 branches covered.">				if(feature instanceof BinaryFeature){</span>
+<span class="fc" id="L94">					BinaryFeature binaryFeature = (BinaryFeature)feature;</span>
+
+<span class="fc" id="L96">					Arrays.fill(features, binaryFeature);</span>
+<span class="fc" id="L97">				} else</span>
+
+				{
+<span class="fc" id="L100">					features[0] = feature;</span>
+
+<span class="fc" id="L102">					ContinuousFeature continuousFeature = feature.toContinuousFeature();</span>
+
+<span class="fc bfc" id="L104" title="All 2 branches covered.">					for(int i = 2; i &lt;= degree; i++){</span>
+<span class="fc" id="L105">						features[i - 1] = new PowerFeature(encoder, continuousFeature.getName(), continuousFeature.getDataType(), i);</span>
+					}
+				}
+
+<span class="fc" id="L109">				return features;</span>
+			}
+		};
+
+<span class="fc" id="L113">		List&lt;Feature[]&gt; transformedFeatures = new ArrayList&lt;&gt;(Lists.transform(features, function));</span>
+
+<span class="fc" id="L115">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L117" title="All 2 branches covered.">		for(int[] power : powers){</span>
+<span class="fc" id="L118">			StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc" id="L120">			String sep = &quot;&quot;;</span>
+
+<span class="fc" id="L122">			List&lt;Feature&gt; powerFeatures = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">			for(int i = 0; i &lt; power.length; i++){</span>
+
+<span class="fc bfc" id="L126" title="All 2 branches covered.">				if(power[i] &gt;= 1){</span>
+<span class="fc" id="L127">					Feature transformedFeature = transformedFeatures.get(i)[power[i] - 1];</span>
+
+<span class="fc" id="L129">					sb.append(sep);</span>
+
+<span class="fc" id="L131">					sep = &quot;:&quot;;</span>
+
+<span class="fc" id="L133">					sb.append((FeatureUtil.getName(transformedFeature)).getValue());</span>
+
+<span class="fc" id="L135">					powerFeatures.add(transformedFeature);</span>
+				}
+			}
+
+<span class="fc bfc" id="L139" title="All 2 branches covered.">			if(powerFeatures.size() == 0){</span>
+<span class="fc" id="L140">				result.add(unitFeature);</span>
+			} else
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">			if(powerFeatures.size() == 1){</span>
+<span class="fc" id="L144">				result.add(Iterables.getOnlyElement(powerFeatures));</span>
+			} else
+
+			{
+<span class="fc" id="L148">				String id = sb.toString();</span>
+
+<span class="fc" id="L150">				result.add(new InteractionFeature(encoder, FieldName.create(id), DataType.DOUBLE, powerFeatures));</span>
+			}
+<span class="fc" id="L152">		}</span>
+
+<span class="fc" id="L154">		return result;</span>
+	}
+
+	public int getDegree(){
+<span class="fc" id="L158">		return ValueUtil.asInt((Number)get(&quot;degree&quot;));</span>
+	}
+
+	public Boolean getIncludeBias(){
+<span class="fc" id="L162">		return (Boolean)get(&quot;include_bias&quot;);</span>
+	}
+
+	public Boolean getInteractionOnly(){
+<span class="fc" id="L166">		return (Boolean)get(&quot;interaction_only&quot;);</span>
+	}
+
+	public int getNumberOfInputFeatures(){
+<span class="fc" id="L170">		return ValueUtil.asInt((Number)get(&quot;n_input_features_&quot;));</span>
+	}
+
+	public int getNumberOfOutputFeatures(){
+<span class="fc" id="L174">		return ValueUtil.asInt((Number)get(&quot;n_output_features_&quot;));</span>
+	}
+
+	/**
+	 * @see https://docs.python.org/2/library/itertools.html#itertools.combinations
+	 */
+	static
+	private List&lt;int[]&gt; combinations(int n, int r){
+<span class="fc" id="L182">		List&lt;int[]&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L184">		int[] indices = new int[r];</span>
+
+<span class="fc bfc" id="L186" title="All 2 branches covered.">		for(int i = 0; i &lt; r; i++){</span>
+<span class="fc" id="L187">			indices[i] = i;</span>
+		}
+
+<span class="fc" id="L190">		result.add(power(n, indices));</span>
+
+		while(true){
+<span class="fc" id="L193">			int i = (r - 1);</span>
+
+<span class="fc bfc" id="L195" title="All 2 branches covered.">			for(; i &gt; -1; i--){</span>
+
+<span class="fc bfc" id="L197" title="All 2 branches covered.">				if(indices[i] != (i + n - r)){</span>
+<span class="fc" id="L198">					break;</span>
+				}
+			}
+
+<span class="fc bfc" id="L202" title="All 2 branches covered.">			if(i &lt; 0){</span>
+<span class="fc" id="L203">				break;</span>
+			}
+
+<span class="fc" id="L206">			indices[i] += 1;</span>
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">			for(int j = (i + 1); j &lt; r; j++){</span>
+<span class="fc" id="L209">				indices[j] = (indices[j - 1] + 1);</span>
+			}
+
+<span class="fc" id="L212">			result.add(power(n, indices));</span>
+<span class="fc" id="L213">		}</span>
+
+<span class="fc" id="L215">		return result;</span>
+	}
+
+	/**
+	 * @see https://docs.python.org/2/library/itertools.html#itertools.combinations_with_replacement
+	 */
+	static
+	private List&lt;int[]&gt; combinations_with_replacement(int n, int r){
+<span class="fc" id="L223">		List&lt;int[]&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L225">		int[] indices = new int[r];</span>
+
+<span class="fc" id="L227">		result.add(power(n, indices));</span>
+
+		while(true){
+<span class="fc" id="L230">			int i = (r - 1);</span>
+
+<span class="fc bfc" id="L232" title="All 2 branches covered.">			for(; i &gt; -1; i--){</span>
+
+<span class="fc bfc" id="L234" title="All 2 branches covered.">				if(indices[i] != (n - 1)){</span>
+<span class="fc" id="L235">					break;</span>
+				}
+			}
+
+<span class="fc bfc" id="L239" title="All 2 branches covered.">			if(i &lt; 0){</span>
+<span class="fc" id="L240">				break;</span>
+			}
+
+<span class="fc" id="L243">			int value = (indices[i] + 1);</span>
+
+<span class="fc bfc" id="L245" title="All 2 branches covered.">			for(int j = i; j &lt; r; j++){</span>
+<span class="fc" id="L246">				indices[j] = value;</span>
+			}
+
+<span class="fc" id="L249">			result.add(power(n, indices));</span>
+<span class="fc" id="L250">		}</span>
+
+<span class="fc" id="L252">		return result;</span>
+	}
+
+	static
+	private int[] power(int n, int[] indices){
+<span class="fc" id="L257">		int[] result = new int[n];</span>
+
+<span class="fc bfc" id="L259" title="All 2 branches covered.">		for(int index : indices){</span>
+<span class="fc" id="L260">			result[index] += 1;</span>
+		}
+
+<span class="fc" id="L263">		return result;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

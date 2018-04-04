@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NDArray.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">numpy.core</a> &gt; <span class="el_source">NDArray.java</span></div><h1>NDArray.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package numpy.core;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+
+import com.google.common.base.Charsets;
+import net.razorvine.pickle.objects.ClassDictConstructor;
+import org.jpmml.sklearn.CClassDict;
+import org.jpmml.sklearn.HasArray;
+
+public class NDArray extends CClassDict implements HasArray {
+
+<span class="fc" id="L34">	private Object content = null;</span>
+
+
+	public NDArray(){
+<span class="fc" id="L38">		this(&quot;numpy&quot;, &quot;ndarray&quot;);</span>
+<span class="fc" id="L39">	}</span>
+
+	public NDArray(String module, String name){
+<span class="fc" id="L42">		super(module, name);</span>
+<span class="fc" id="L43">	}</span>
+
+	@Override
+	public void __init__(Object[] args){
+
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">		if(isDefault(args)){</span>
+
+			// XXX
+<span class="fc" id="L51">			return;</span>
+		}
+
+<span class="nc" id="L54">		super.__init__(args);</span>
+<span class="nc" id="L55">	}</span>
+
+	private boolean isDefault(Object[] args){
+
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">		if(args.length != 3){</span>
+<span class="nc" id="L60">			return false;</span>
+		} // End if
+
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">		if(args[0] instanceof ClassDictConstructor){</span>
+
+<span class="pc bpc" id="L65" title="2 of 4 branches missed.">			if((args[1] instanceof Object[] &amp;&amp; Arrays.equals((Object[])args[1], new Object[]{0}))){</span>
+
+				// Python 2(.7)
+<span class="pc bpc" id="L68" title="1 of 4 branches missed.">				if((args[2] instanceof String) &amp;&amp; ((String)args[2]).equals(&quot;b&quot;)){</span>
+<span class="fc" id="L69">					return true;</span>
+				} // End if
+
+				// Python 3(.4)
+<span class="pc bpc" id="L73" title="2 of 4 branches missed.">				if((args[2] instanceof byte[] &amp;&amp; Arrays.equals((byte[])args[2], new byte[]{(byte)'b'}))){</span>
+<span class="fc" id="L74">					return true;</span>
+				}
+			}
+		}
+
+<span class="nc" id="L79">		return false;</span>
+	}
+
+	/**
+	 * https://github.com/numpy/numpy/blob/master/numpy/core/src/multiarray/methods.c
+	 */
+	@Override
+	public void __setstate__(Object[] args){
+<span class="fc" id="L87">		super.__setstate__(createAttributeMap(SETSTATE_ATTRIBUTES, args));</span>
+<span class="fc" id="L88">	}</span>
+
+	@Override
+	public List&lt;?&gt; getArrayContent(){
+<span class="fc" id="L92">		return NDArrayUtil.getContent(this);</span>
+	}
+
+	@Override
+	public int[] getArrayShape(){
+<span class="fc" id="L97">		return NDArrayUtil.getShape(this);</span>
+	}
+
+	public Object getContent(){
+
+<span class="fc bfc" id="L102" title="All 2 branches covered.">		if(this.content == null){</span>
+<span class="fc" id="L103">			this.content = loadContent();</span>
+		}
+
+<span class="fc" id="L106">		return this.content;</span>
+	}
+
+	private Object loadContent(){
+<span class="fc" id="L110">		Object[] shape = getShape();</span>
+<span class="fc" id="L111">		Object descr = getDescr();</span>
+<span class="fc" id="L112">		Object data = getData();</span>
+
+<span class="fc bfc" id="L114" title="All 2 branches covered.">		if(!(data instanceof byte[])){</span>
+<span class="fc" id="L115">			return data;</span>
+		}
+
+<span class="pc" id="L118">		try(InputStream is = new ByteArrayInputStream((byte[])data)){</span>
+<span class="fc" id="L119">			return NDArrayUtil.parseData(is, descr, shape);</span>
+<span class="pc bpc" id="L120" title="6 of 8 branches missed.">		} catch(IOException ioe){</span>
+<span class="nc" id="L121">			throw new RuntimeException(ioe);</span>
+		}
+	}
+
+	public Object[] getShape(){
+<span class="fc" id="L126">		return (Object[])get(&quot;shape&quot;);</span>
+	}
+
+	public Object getDescr(){
+<span class="fc" id="L130">		return get(&quot;descr&quot;);</span>
+	}
+
+	public Boolean getFortranOrder(){
+<span class="fc" id="L134">		return (Boolean)get(&quot;fortran_order&quot;);</span>
+	}
+
+	public Object getData(){
+<span class="fc" id="L138">		Object data = get(&quot;data&quot;);</span>
+
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">		if(data instanceof String){</span>
+<span class="nc" id="L141">			String string = (String)data;</span>
+
+<span class="nc" id="L143">			return string.getBytes(Charsets.ISO_8859_1);</span>
+		}
+
+<span class="fc" id="L146">		return data;</span>
+	}
+
+<span class="fc" id="L149">	private static final String[] SETSTATE_ATTRIBUTES = {</span>
+		&quot;version&quot;,
+		&quot;shape&quot;,
+		&quot;descr&quot;,
+		&quot;fortran_order&quot;,
+		&quot;data&quot;
+	};
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

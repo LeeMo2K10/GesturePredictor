@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Transformer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn</a> &gt; <span class="el_source">Transformer.java</span></div><h1>Transformer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn;
+
+import java.util.List;
+
+import com.google.common.base.CaseFormat;
+import net.razorvine.pickle.objects.ClassDictConstructor;
+import numpy.DType;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.OpType;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.FeatureUtil;
+import org.jpmml.sklearn.ClassDictConstructorUtil;
+import org.jpmml.sklearn.PyClassDict;
+import org.jpmml.sklearn.SkLearnEncoder;
+
+abstract
+public class Transformer extends PyClassDict {
+
+	public Transformer(String module, String name){
+<span class="fc" id="L39">		super(module, name);</span>
+<span class="fc" id="L40">	}</span>
+
+	abstract
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder);
+
+	public OpType getOpType(){
+<span class="fc" id="L46">		return OpType.CONTINUOUS;</span>
+	}
+
+	public DataType getDataType(){
+<span class="fc" id="L50">		return DataType.DOUBLE;</span>
+	}
+
+	public DType getDType(){
+<span class="fc" id="L54">		Object dtype = get(&quot;dtype&quot;);</span>
+
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">		if(dtype instanceof ClassDictConstructor){</span>
+<span class="fc" id="L57">			ClassDictConstructor classDictConstructor = (ClassDictConstructor)dtype;</span>
+
+<span class="fc" id="L59">			dtype = ClassDictConstructorUtil.construct(classDictConstructor, DType.class);</span>
+		}
+
+<span class="fc" id="L62">		return (DType)dtype;</span>
+	}
+
+	protected String name(){
+<span class="fc" id="L66">		Class&lt;? extends Transformer&gt; clazz = getClass();</span>
+
+<span class="fc" id="L68">		String name = clazz.getSimpleName();</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">		if(name.startsWith(&quot;PMML&quot;)){</span>
+<span class="nc" id="L70">			name = name.substring(&quot;PMML&quot;.length());</span>
+		}
+
+<span class="fc" id="L73">		return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);</span>
+	}
+
+	protected FieldName createName(Feature feature){
+<span class="fc" id="L77">		return FeatureUtil.createName(name(), feature);</span>
+	}
+
+	protected FieldName createName(Feature feature, int index){
+<span class="fc" id="L81">		return FeatureUtil.createName(name(), feature, index);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">numpy</a> &gt; <span class="el_source">DType.java</span></div><h1>DType.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package numpy;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.dmg.pmml.DataType;
+import org.jpmml.sklearn.CClassDict;
+
+public class DType extends CClassDict {
+
+	public DType(String module, String name){
+<span class="fc" id="L35">		super(module, name);</span>
+<span class="fc" id="L36">	}</span>
+
+	@Override
+	public void __init__(Object[] args){
+<span class="fc" id="L40">		super.__setstate__(createAttributeMap(INIT_ATTRIBUTES, args));</span>
+<span class="fc" id="L41">	}</span>
+
+	/**
+	 * https://github.com/numpy/numpy/blob/master/numpy/core/src/multiarray/descriptor.c
+	 */
+	@Override
+	public void __setstate__(Object[] args){
+<span class="fc" id="L48">		super.__setstate__(createAttributeMap(SETSTATE_ATTRIBUTES, args));</span>
+<span class="fc" id="L49">	}</span>
+
+	public DataType getDataType(){
+<span class="fc" id="L52">		String className = getClassName();</span>
+
+<span class="pc bpc" id="L54" title="27 of 33 branches missed.">		switch(className){</span>
+			case &quot;numpy.bool_&quot;:
+<span class="nc" id="L56">				return DataType.BOOLEAN;</span>
+			case &quot;numpy.int_&quot;:
+			case &quot;numpy.int8&quot;:
+			case &quot;numpy.int16&quot;:
+			case &quot;numpy.int32&quot;:
+			case &quot;numpy.int64&quot;:
+<span class="nc" id="L62">				return DataType.INTEGER;</span>
+			case &quot;numpy.float32&quot;:
+<span class="fc" id="L64">				return DataType.FLOAT;</span>
+			case &quot;numpy.float_&quot;:
+			case &quot;numpy.float64&quot;:
+<span class="fc" id="L67">				return DataType.DOUBLE;</span>
+			default:
+<span class="nc" id="L69">				throw new IllegalArgumentException(className);</span>
+		}
+	}
+
+	public Object toDescr(){
+<span class="fc" id="L74">		Map&lt;String, Object[]&gt; values = getValues();</span>
+
+<span class="fc bfc" id="L76" title="All 2 branches covered.">		if(values == null){</span>
+<span class="fc" id="L77">			String obj = getObj();</span>
+<span class="fc" id="L78">			String order = getOrder();</span>
+
+<span class="fc" id="L80">			return formatDescr(obj, order);</span>
+		}
+
+<span class="fc" id="L83">		Set&lt;String&gt; valueKeys = values.keySet();</span>
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">		if((TREE_KEYS).equals(valueKeys)){</span>
+<span class="fc" id="L86">			return formatDescr(TREE_KEYS, values);</span>
+		} else
+
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">		if((NODEDATA_KEYS).equals(valueKeys)){</span>
+<span class="fc" id="L90">			return formatDescr(NODEDATA_KEYS, values);</span>
+		}
+
+<span class="nc" id="L93">		throw new IllegalArgumentException();</span>
+	}
+
+	public Map&lt;String, Object[]&gt; getValues(){
+<span class="fc" id="L97">		return (Map)get(&quot;values&quot;);</span>
+	}
+
+	public String getObj(){
+<span class="fc" id="L101">		return (String)get(&quot;obj&quot;);</span>
+	}
+
+	public String getOrder(){
+<span class="fc" id="L105">		return (String)get(&quot;order&quot;);</span>
+	}
+
+	static
+	private List&lt;Object[]&gt; formatDescr(Collection&lt;String&gt; keys, Map&lt;String, Object[]&gt; values){
+<span class="fc" id="L110">		List&lt;Object[]&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">		for(String key : keys){</span>
+<span class="fc" id="L113">			Object[] value = values.get(key);</span>
+
+<span class="fc" id="L115">			DType dType = (DType)value[0];</span>
+
+<span class="fc" id="L117">			result.add(new Object[]{key, dType.toDescr()});</span>
+<span class="fc" id="L118">		}</span>
+
+<span class="fc" id="L120">		return result;</span>
+	}
+
+	static
+	private String formatDescr(String obj, String order){
+
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">		if(obj == null){</span>
+<span class="nc" id="L127">			throw new IllegalArgumentException();</span>
+		}
+
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">		return (order != null ? (order + obj) : obj);</span>
+	}
+
+<span class="fc" id="L133">	private static final String[] INIT_ATTRIBUTES = {</span>
+		&quot;obj&quot;,
+		&quot;align&quot;,
+		&quot;copy&quot;
+	};
+
+<span class="fc" id="L139">	private static final String[] SETSTATE_ATTRIBUTES = {</span>
+		&quot;version&quot;,
+		&quot;order&quot;,
+		&quot;subdescr&quot;,
+		&quot;names&quot;,
+		&quot;values&quot;,
+		&quot;w_size&quot;,
+		&quot;alignment&quot;,
+		&quot;flags&quot;
+	};
+
+<span class="fc" id="L150">	private static final Set&lt;String&gt; TREE_KEYS = new LinkedHashSet&lt;&gt;(Arrays.asList(&quot;left_child&quot;, &quot;right_child&quot;, &quot;feature&quot;, &quot;threshold&quot;, &quot;impurity&quot;, &quot;n_node_samples&quot;, &quot;weighted_n_node_samples&quot;));</span>
+<span class="fc" id="L151">	private static final Set&lt;String&gt; NODEDATA_KEYS = new LinkedHashSet&lt;&gt;(Arrays.asList(&quot;idx_start&quot;, &quot;idx_end&quot;, &quot;is_leaf&quot;, &quot;radius&quot;));</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

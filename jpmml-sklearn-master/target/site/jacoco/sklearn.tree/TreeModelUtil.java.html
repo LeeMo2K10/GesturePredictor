@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreeModelUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.tree</a> &gt; <span class="el_source">TreeModelUtil.java</span></div><h1>TreeModelUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.tree;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.Model;
+import org.dmg.pmml.Predicate;
+import org.dmg.pmml.ScoreDistribution;
+import org.dmg.pmml.SimplePredicate;
+import org.dmg.pmml.True;
+import org.dmg.pmml.Visitor;
+import org.dmg.pmml.tree.Node;
+import org.dmg.pmml.tree.TreeModel;
+import org.jpmml.converter.BinaryFeature;
+import org.jpmml.converter.CategoricalLabel;
+import org.jpmml.converter.ContinuousFeature;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.ModelUtil;
+import org.jpmml.converter.PredicateManager;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.sklearn.visitors.TreeModelCompactor;
+import org.jpmml.sklearn.visitors.TreeModelFlattener;
+import sklearn.Estimator;
+import sklearn.HasEstimatorEnsemble;
+
+public class TreeModelUtil {
+
+<span class="nc" id="L51">	private TreeModelUtil(){</span>
+<span class="nc" id="L52">	}</span>
+
+	static
+	public &lt;E extends Estimator &amp; HasTreeOptions, M extends Model&gt; M transform(E estimator, M model){
+<span class="fc" id="L56">		Boolean compact = (Boolean)estimator.getOption(HasTreeOptions.OPTION_COMPACT, Boolean.TRUE);</span>
+<span class="fc" id="L57">		Boolean flat = (Boolean)estimator.getOption(HasTreeOptions.OPTION_FLAT, Boolean.FALSE);</span>
+
+<span class="fc" id="L59">		List&lt;Visitor&gt; visitors = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">		if(compact){</span>
+<span class="fc" id="L62">			visitors.add(new TreeModelCompactor());</span>
+		} // End if
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">		if(flat){</span>
+<span class="fc" id="L66">			visitors.add(new TreeModelFlattener());</span>
+		}
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">		for(Visitor visitor : visitors){</span>
+<span class="fc" id="L70">			visitor.applyTo(model);</span>
+<span class="fc" id="L71">		}</span>
+
+<span class="fc" id="L73">		return model;</span>
+	}
+
+	static
+	public &lt;E extends Estimator &amp; HasEstimatorEnsemble&lt;T&gt;, T extends Estimator &amp; HasTree&gt; List&lt;TreeModel&gt; encodeTreeModelSegmentation(E estimator, MiningFunction miningFunction, Schema schema){
+<span class="fc" id="L78">		PredicateManager predicateManager = new PredicateManager();</span>
+
+<span class="fc" id="L80">		return encodeTreeModelSegmentation(estimator, predicateManager, miningFunction, schema);</span>
+	}
+
+	static
+	public &lt;E extends Estimator &amp; HasEstimatorEnsemble&lt;T&gt;, T extends Estimator &amp; HasTree&gt; List&lt;TreeModel&gt; encodeTreeModelSegmentation(E estimator, final PredicateManager predicateManager, final MiningFunction miningFunction, final Schema schema){
+<span class="fc" id="L85">		List&lt;? extends T&gt; estimators = estimator.getEstimators();</span>
+
+		final
+<span class="fc" id="L88">		Schema segmentSchema = schema.toAnonymousSchema();</span>
+
+<span class="fc" id="L90">		Function&lt;T, TreeModel&gt; function = new Function&lt;T, TreeModel&gt;(){</span>
+
+			@Override
+			public TreeModel apply(T estimator){
+<span class="fc" id="L94">				Schema treeModelSchema = toTreeModelSchema(estimator.getDataType(), segmentSchema);</span>
+
+<span class="fc" id="L96">				return TreeModelUtil.encodeTreeModel(estimator, predicateManager, miningFunction, treeModelSchema);</span>
+			}
+		};
+
+<span class="fc" id="L100">		return new ArrayList&lt;&gt;(Lists.transform(estimators, function));</span>
+	}
+
+	static
+	public &lt;E extends Estimator &amp; HasTree&gt; TreeModel encodeTreeModel(E estimator, MiningFunction miningFunction, Schema schema){
+<span class="fc" id="L105">		PredicateManager predicateManager = new PredicateManager();</span>
+
+<span class="fc" id="L107">		return encodeTreeModel(estimator, predicateManager, miningFunction, schema);</span>
+	}
+
+	static
+	public &lt;E extends Estimator &amp; HasTree&gt; TreeModel encodeTreeModel(E estimator, PredicateManager predicateManager, MiningFunction miningFunction, Schema schema){
+<span class="fc" id="L112">		Tree tree = estimator.getTree();</span>
+
+<span class="fc" id="L114">		int[] leftChildren = tree.getChildrenLeft();</span>
+<span class="fc" id="L115">		int[] rightChildren = tree.getChildrenRight();</span>
+<span class="fc" id="L116">		int[] features = tree.getFeature();</span>
+<span class="fc" id="L117">		double[] thresholds = tree.getThreshold();</span>
+<span class="fc" id="L118">		double[] values = tree.getValues();</span>
+
+<span class="fc" id="L120">		Node root = new Node()</span>
+<span class="fc" id="L121">			.setId(&quot;1&quot;)</span>
+<span class="fc" id="L122">			.setPredicate(new True());</span>
+
+<span class="fc" id="L124">		encodeNode(root, predicateManager, 0, leftChildren, rightChildren, features, thresholds, values, miningFunction, schema);</span>
+
+<span class="fc" id="L126">		TreeModel treeModel = new TreeModel(miningFunction, ModelUtil.createMiningSchema(schema.getLabel()), root)</span>
+<span class="fc" id="L127">			.setSplitCharacteristic(TreeModel.SplitCharacteristic.BINARY_SPLIT);</span>
+
+<span class="fc" id="L129">		return treeModel;</span>
+	}
+
+	static
+	private void encodeNode(Node node, PredicateManager predicateManager, int index, int[] leftChildren, int[] rightChildren, int[] features, double[] thresholds, double[] values, MiningFunction miningFunction, Schema schema){
+<span class="fc" id="L134">		int featureIndex = features[index];</span>
+
+		// A non-leaf (binary split) node
+<span class="fc bfc" id="L137" title="All 2 branches covered.">		if(featureIndex &gt;= 0){</span>
+<span class="fc" id="L138">			Feature feature = schema.getFeature(featureIndex);</span>
+
+<span class="fc" id="L140">			double threshold = thresholds[index];</span>
+
+			Predicate leftPredicate;
+			Predicate rightPredicate;
+
+<span class="fc bfc" id="L145" title="All 2 branches covered.">			if(feature instanceof BinaryFeature){</span>
+<span class="fc" id="L146">				BinaryFeature binaryFeature = (BinaryFeature)feature;</span>
+
+<span class="pc bpc" id="L148" title="2 of 4 branches missed.">				if(threshold &lt; 0 || threshold &gt; 1){</span>
+<span class="nc" id="L149">					throw new IllegalArgumentException();</span>
+				}
+
+<span class="fc" id="L152">				String value = binaryFeature.getValue();</span>
+
+<span class="fc" id="L154">				leftPredicate = predicateManager.createSimplePredicate(binaryFeature, SimplePredicate.Operator.NOT_EQUAL, value);</span>
+<span class="fc" id="L155">				rightPredicate = predicateManager.createSimplePredicate(binaryFeature, SimplePredicate.Operator.EQUAL, value);</span>
+<span class="fc" id="L156">			} else</span>
+
+			{
+<span class="fc" id="L159">				ContinuousFeature continuousFeature = feature</span>
+<span class="fc" id="L160">					.toContinuousFeature(DataType.FLOAT) // First, cast from any numeric type (including numpy.float64) to numpy.float32</span>
+<span class="fc" id="L161">					.toContinuousFeature(DataType.DOUBLE); // Second, cast from numpy.float32 to numpy.float64</span>
+
+<span class="fc" id="L163">				String value = ValueUtil.formatValue(threshold);</span>
+
+<span class="fc" id="L165">				leftPredicate = predicateManager.createSimplePredicate(continuousFeature, SimplePredicate.Operator.LESS_OR_EQUAL, value);</span>
+<span class="fc" id="L166">				rightPredicate = predicateManager.createSimplePredicate(continuousFeature, SimplePredicate.Operator.GREATER_THAN, value);</span>
+			}
+
+<span class="fc" id="L169">			int leftIndex = leftChildren[index];</span>
+<span class="fc" id="L170">			int rightIndex = rightChildren[index];</span>
+
+<span class="fc" id="L172">			Node leftChild = new Node()</span>
+<span class="fc" id="L173">				.setId(String.valueOf(leftIndex + 1))</span>
+<span class="fc" id="L174">				.setPredicate(leftPredicate);</span>
+
+<span class="fc" id="L176">			encodeNode(leftChild, predicateManager, leftIndex, leftChildren, rightChildren, features, thresholds, values, miningFunction, schema);</span>
+
+<span class="fc" id="L178">			Node rightChild = new Node()</span>
+<span class="fc" id="L179">				.setId(String.valueOf(rightIndex + 1))</span>
+<span class="fc" id="L180">				.setPredicate(rightPredicate);</span>
+
+<span class="fc" id="L182">			encodeNode(rightChild, predicateManager, rightIndex, leftChildren, rightChildren, features, thresholds, values, miningFunction, schema);</span>
+
+<span class="fc" id="L184">			node.addNodes(leftChild, rightChild);</span>
+<span class="fc" id="L185">		} else</span>
+
+		// A leaf node
+		{
+<span class="fc bfc" id="L189" title="All 2 branches covered.">			if((MiningFunction.CLASSIFICATION).equals(miningFunction)){</span>
+<span class="fc" id="L190">				CategoricalLabel categoricalLabel = (CategoricalLabel)schema.getLabel();</span>
+
+<span class="fc" id="L192">				double[] scoreRecordCounts = getRow(values, leftChildren.length, categoricalLabel.size(), index);</span>
+
+<span class="fc" id="L194">				double recordCount = 0;</span>
+
+<span class="fc bfc" id="L196" title="All 2 branches covered.">				for(double scoreRecordCount : scoreRecordCounts){</span>
+<span class="fc" id="L197">					recordCount += scoreRecordCount;</span>
+				}
+
+<span class="fc" id="L200">				node.setRecordCount(recordCount);</span>
+
+<span class="fc" id="L202">				String score = null;</span>
+
+<span class="fc" id="L204">				Double probability = null;</span>
+
+<span class="fc bfc" id="L206" title="All 2 branches covered.">				for(int i = 0; i &lt; categoricalLabel.size(); i++){</span>
+<span class="fc" id="L207">					String value = categoricalLabel.getValue(i);</span>
+
+<span class="fc" id="L209">					ScoreDistribution scoreDistribution = new ScoreDistribution(value, scoreRecordCounts[i]);</span>
+
+<span class="fc" id="L211">					node.addScoreDistributions(scoreDistribution);</span>
+
+<span class="fc" id="L213">					double scoreProbability = (scoreRecordCounts[i] / recordCount);</span>
+
+<span class="fc bfc" id="L215" title="All 4 branches covered.">					if(probability == null || probability.compareTo(scoreProbability) &lt; 0){</span>
+<span class="fc" id="L216">						score = scoreDistribution.getValue();</span>
+
+<span class="fc" id="L218">						probability = scoreProbability;</span>
+					}
+				}
+
+<span class="fc" id="L222">				node.setScore(score);</span>
+<span class="fc" id="L223">			} else</span>
+
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">			if((MiningFunction.REGRESSION).equals(miningFunction)){</span>
+<span class="fc" id="L226">				String score = ValueUtil.formatValue(values[index]);</span>
+
+<span class="fc" id="L228">				node.setScore(score);</span>
+<span class="fc" id="L229">			} else</span>
+
+			{
+<span class="nc" id="L232">				throw new IllegalArgumentException();</span>
+			}
+		}
+<span class="fc" id="L235">	}</span>
+
+	static
+	public Schema toTreeModelSchema(final DataType dataType, Schema schema){
+<span class="fc" id="L239">		Function&lt;Feature, Feature&gt; function = new Function&lt;Feature, Feature&gt;(){</span>
+
+			@Override
+			public Feature apply(Feature feature){
+
+<span class="fc bfc" id="L244" title="All 2 branches covered.">				if(feature instanceof BinaryFeature){</span>
+<span class="fc" id="L245">					BinaryFeature binaryFeature = (BinaryFeature)feature;</span>
+
+<span class="fc" id="L247">					return binaryFeature;</span>
+				} else
+
+				{
+<span class="fc" id="L251">					ContinuousFeature continuousFeature = feature.toContinuousFeature(dataType);</span>
+
+<span class="fc" id="L253">					return continuousFeature;</span>
+				}
+			}
+		};
+
+<span class="fc" id="L258">		return schema.toTransformedSchema(function);</span>
+	}
+
+	static
+	private double[] getRow(double[] values, int rows, int columns, int row){
+
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">		if(values.length != (rows * columns)){</span>
+<span class="nc" id="L265">			throw new IllegalArgumentException(&quot;Expected &quot; + (rows * columns) + &quot; element(s), got &quot; + values.length + &quot; element(s)&quot;);</span>
+		}
+
+<span class="fc" id="L268">		double[] result = new double[columns];</span>
+
+<span class="fc" id="L270">		System.arraycopy(values, (row * columns), result, 0, columns);</span>
+
+<span class="fc" id="L272">		return result;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

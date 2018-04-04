@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GradientBoostingRegressor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.ensemble.gradient_boosting</a> &gt; <span class="el_source">GradientBoostingRegressor.java</span></div><h1>GradientBoostingRegressor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.ensemble.gradient_boosting;
+
+import java.util.List;
+
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.mining.MiningModel;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.ValueUtil;
+import sklearn.HasEstimatorEnsemble;
+import sklearn.Regressor;
+import sklearn.tree.DecisionTreeRegressor;
+import sklearn.tree.HasTreeOptions;
+
+public class GradientBoostingRegressor extends Regressor implements HasEstimatorEnsemble&lt;DecisionTreeRegressor&gt;, HasTreeOptions {
+
+	public GradientBoostingRegressor(String module, String name){
+<span class="fc" id="L35">		super(module, name);</span>
+<span class="fc" id="L36">	}</span>
+
+	@Override
+	public int getNumberOfFeatures(){
+
+		// SkLearn 0.18
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">		if(containsKey(&quot;n_features&quot;)){</span>
+<span class="nc" id="L43">			return ValueUtil.asInt((Number)get(&quot;n_features&quot;));</span>
+		}
+
+		// SkLearn 0.19+
+<span class="fc" id="L47">		return super.getNumberOfFeatures();</span>
+	}
+
+	@Override
+	public DataType getDataType(){
+<span class="nc" id="L52">		return DataType.FLOAT;</span>
+	}
+
+	@Override
+	public MiningModel encodeModel(Schema schema){
+<span class="fc" id="L57">		HasDefaultValue init = getInit();</span>
+
+<span class="fc" id="L59">		return GradientBoostingUtil.encodeGradientBoosting(this, init.getDefaultValue(), getLearningRate(), schema);</span>
+	}
+
+	public HasDefaultValue getInit(){
+<span class="fc" id="L63">		return get(&quot;init_&quot;, HasDefaultValue.class);</span>
+	}
+
+	public Number getLearningRate(){
+<span class="fc" id="L67">		return (Number)get(&quot;learning_rate&quot;);</span>
+	}
+
+	@Override
+	public List&lt;? extends DecisionTreeRegressor&gt; getEstimators(){
+<span class="fc" id="L72">		return getArray(&quot;estimators_&quot;, DecisionTreeRegressor.class);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectKBest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.feature_selection</a> &gt; <span class="el_source">SelectKBest.java</span></div><h1>SelectKBest.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.feature_selection;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import com.google.common.primitives.Booleans;
+import org.jpmml.converter.ValueUtil;
+import sklearn.Selector;
+
+public class SelectKBest extends Selector {
+
+	public SelectKBest(String module, String name){
+<span class="fc" id="L32">		super(module, name);</span>
+<span class="fc" id="L33">	}</span>
+
+	@Override
+	public int getNumberOfFeatures(){
+<span class="fc" id="L37">		int[] shape = getScoresShape();</span>
+
+<span class="fc" id="L39">		return shape[0];</span>
+	}
+
+	@Override
+	public List&lt;Boolean&gt; getSupportMask(){
+<span class="fc" id="L44">		Object k = getK();</span>
+<span class="fc" id="L45">		List&lt;? extends Number&gt; scores = getScores();</span>
+
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">		if((&quot;all&quot;).equals(k)){</span>
+<span class="nc" id="L48">			return null;</span>
+		}
+
+<span class="fc" id="L51">		List&lt;Entry&lt;Integer&gt;&gt; entries = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L53" title="All 2 branches covered.">		for(int i = 0; i &lt; scores.size(); i++){</span>
+<span class="fc" id="L54">			Number score = scores.get(i);</span>
+
+<span class="fc" id="L56">			double doubleScore = score.doubleValue();</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">			if(Double.isNaN(doubleScore)){</span>
+<span class="nc" id="L58">				doubleScore = -Double.MAX_VALUE;</span>
+			}
+
+<span class="fc" id="L61">			Entry&lt;Integer&gt; entry = new Entry&lt;&gt;(i, doubleScore);</span>
+
+<span class="fc" id="L63">			entries.add(entry);</span>
+		}
+
+<span class="fc" id="L66">		Collections.sort(entries);</span>
+
+<span class="fc" id="L68">		boolean[] result = new boolean[scores.size()];</span>
+
+<span class="fc bfc" id="L70" title="All 2 branches covered.">		for(int i = 0, max = ValueUtil.asInt((Number)k); i &lt; max; i++){</span>
+<span class="fc" id="L71">			Entry&lt;Integer&gt; entry = entries.get(entries.size() - (i + 1));</span>
+
+<span class="fc" id="L73">			result[entry.getId()] = true;</span>
+		}
+
+<span class="fc" id="L76">		return Booleans.asList(result);</span>
+	}
+
+	public Object getK(){
+<span class="fc" id="L80">		return get(&quot;k&quot;);</span>
+	}
+
+	public List&lt;? extends Number&gt; getScores(){
+<span class="fc" id="L84">		return getArray(&quot;scores_&quot;, Number.class);</span>
+	}
+
+	public int[] getScoresShape(){
+<span class="fc" id="L88">		return getArrayShape(&quot;scores_&quot;, 1);</span>
+	}
+
+	static
+	private class Entry&lt;E&gt; implements Comparable&lt;Entry&lt;E&gt;&gt; {
+
+		private E id;
+
+		private double score;
+
+
+<span class="fc" id="L99">		public Entry(E id, double score){</span>
+<span class="fc" id="L100">			setId(id);</span>
+<span class="fc" id="L101">			setScore(score);</span>
+<span class="fc" id="L102">		}</span>
+
+		@Override
+		public int compareTo(Entry&lt;E&gt; that){
+<span class="fc" id="L106">			return Double.compare(this.getScore(), that.getScore());</span>
+		}
+
+		public E getId(){
+<span class="fc" id="L110">			return this.id;</span>
+		}
+
+		private void setId(E id){
+<span class="fc" id="L114">			this.id = id;</span>
+<span class="fc" id="L115">		}</span>
+
+		public double getScore(){
+<span class="fc" id="L118">			return this.score;</span>
+		}
+
+		private void setScore(double score){
+<span class="fc" id="L122">			this.score = score;</span>
+<span class="fc" id="L123">		}</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

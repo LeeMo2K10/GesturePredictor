@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PMMLPipeline.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn2pmml</a> &gt; <span class="el_source">PMMLPipeline.java</span></div><h1>PMMLPipeline.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn2pmml;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.xml.parsers.DocumentBuilder;
+
+import numpy.core.NDArray;
+import org.dmg.pmml.DataField;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.Extension;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.InlineTable;
+import org.dmg.pmml.MiningBuildTask;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.Model;
+import org.dmg.pmml.ModelVerification;
+import org.dmg.pmml.OpType;
+import org.dmg.pmml.PMML;
+import org.dmg.pmml.Row;
+import org.dmg.pmml.VerificationField;
+import org.dmg.pmml.VerificationFields;
+import org.jpmml.converter.CMatrixUtil;
+import org.jpmml.converter.CategoricalLabel;
+import org.jpmml.converter.ContinuousLabel;
+import org.jpmml.converter.DOMUtil;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.Label;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.converter.WildcardFeature;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.PyClassDict;
+import org.jpmml.sklearn.SkLearnEncoder;
+import org.jpmml.sklearn.TupleUtil;
+import org.jpmml.sklearn.XMLUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import sklearn.Classifier;
+import sklearn.ClassifierUtil;
+import sklearn.Estimator;
+import sklearn.HasEstimator;
+import sklearn.HasNumberOfFeatures;
+import sklearn.Initializer;
+import sklearn.Transformer;
+import sklearn.TransformerUtil;
+import sklearn.TypeUtil;
+import sklearn.pipeline.Pipeline;
+
+public class PMMLPipeline extends Pipeline implements HasEstimator&lt;Estimator&gt; {
+
+	public PMMLPipeline(){
+<span class="fc" id="L76">		this(&quot;sklearn2pmml&quot;, &quot;PMMLPipeline&quot;);</span>
+<span class="fc" id="L77">	}</span>
+
+	public PMMLPipeline(String module, String name){
+<span class="fc" id="L80">		super(module, name);</span>
+<span class="fc" id="L81">	}</span>
+
+	public PMML encodePMML(){
+<span class="fc" id="L84">		List&lt;? extends Transformer&gt; transformers = getTransformers();</span>
+<span class="fc" id="L85">		Estimator estimator = getEstimator();</span>
+<span class="fc" id="L86">		List&lt;String&gt; activeFields = getActiveFields();</span>
+<span class="fc" id="L87">		List&lt;String&gt; probabilityFields = null;</span>
+<span class="fc" id="L88">		List&lt;String&gt; targetFields = getTargetFields();</span>
+<span class="fc" id="L89">		String repr = getRepr();</span>
+<span class="fc" id="L90">		Verification verification = getVerification();</span>
+
+<span class="fc" id="L92">		SkLearnEncoder encoder = new SkLearnEncoder();</span>
+
+<span class="fc" id="L94">		Label label = null;</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">		if(estimator.isSupervised()){</span>
+<span class="fc" id="L97">			String targetField = null;</span>
+
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">			if(targetFields != null){</span>
+<span class="fc" id="L100">				ClassDictUtil.checkSize(1, targetFields);</span>
+
+<span class="fc" id="L102">				targetField = targetFields.get(0);</span>
+			} // End if
+
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">			if(targetField == null){</span>
+<span class="nc" id="L106">				targetField = &quot;y&quot;;</span>
+
+<span class="nc" id="L108">				logger.warn(&quot;Attribute \'&quot; + ClassDictUtil.formatMember(this, &quot;target_fields&quot;) + &quot;\' is not set. Assuming {} as the name of the target field&quot;, targetField);</span>
+			}
+
+<span class="fc" id="L111">			MiningFunction miningFunction = estimator.getMiningFunction();</span>
+<span class="pc bpc" id="L112" title="1 of 3 branches missed.">			switch(miningFunction){</span>
+				case CLASSIFICATION:
+					{
+<span class="fc" id="L115">						List&lt;?&gt; classes = ClassifierUtil.getClasses(estimator);</span>
+
+<span class="fc" id="L117">						DataType dataType = TypeUtil.getDataType(classes, DataType.STRING);</span>
+
+<span class="fc" id="L119">						List&lt;String&gt; categories = ClassifierUtil.formatTargetCategories(classes);</span>
+
+<span class="fc" id="L121">						DataField dataField = encoder.createDataField(FieldName.create(targetField), OpType.CATEGORICAL, dataType, categories);</span>
+
+<span class="fc" id="L123">						label = new CategoricalLabel(dataField);</span>
+					}
+<span class="fc" id="L125">					break;</span>
+				case REGRESSION:
+					{
+<span class="fc" id="L128">						DataField dataField = encoder.createDataField(FieldName.create(targetField), OpType.CONTINUOUS, DataType.DOUBLE);</span>
+
+<span class="fc" id="L130">						label = new ContinuousLabel(dataField);</span>
+					}
+<span class="fc" id="L132">					break;</span>
+				default:
+<span class="nc" id="L134">					throw new IllegalArgumentException();</span>
+			}
+		}
+
+<span class="fc" id="L138">		List&lt;Feature&gt; features = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L140">		Transformer transformer = TransformerUtil.getHead(transformers);</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">		if(transformer != null){</span>
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">			if(!(transformer instanceof Initializer)){</span>
+<span class="fc" id="L144">				features = initFeatures(transformer, transformer.getOpType(), transformer.getDataType(), encoder);</span>
+			}
+
+<span class="fc" id="L147">			features = encodeFeatures(features, encoder);</span>
+		} else
+
+		{
+<span class="fc" id="L151">			features = initFeatures(estimator, estimator.getOpType(), estimator.getDataType(), encoder);</span>
+		}
+
+<span class="fc" id="L154">		int numberOfFeatures = estimator.getNumberOfFeatures();</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">		if(numberOfFeatures &gt; -1){</span>
+<span class="fc" id="L156">			ClassDictUtil.checkSize(numberOfFeatures, features);</span>
+		}
+
+<span class="fc" id="L159">		Schema schema = new Schema(label, features);</span>
+
+<span class="fc" id="L161">		Model model = estimator.encodeModel(schema);</span>
+
+<span class="fc bfc" id="L163" title="All 4 branches covered.">		if(estimator.isSupervised() &amp;&amp; verification != null){</span>
+
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">			if(activeFields == null){</span>
+<span class="nc" id="L166">				throw new IllegalArgumentException();</span>
+			}
+
+<span class="fc" id="L169">			int[] activeValuesShape = verification.getActiveValuesShape();</span>
+<span class="fc" id="L170">			int[] targetValuesShape = verification.getTargetValuesShape();</span>
+
+<span class="fc" id="L172">			ClassDictUtil.checkShapes(0, activeValuesShape, targetValuesShape);</span>
+<span class="fc" id="L173">			ClassDictUtil.checkShapes(1, activeFields.size(), activeValuesShape);</span>
+
+<span class="fc" id="L175">			List&lt;?&gt; activeValues = verification.getActiveValues();</span>
+<span class="fc" id="L176">			List&lt;?&gt; targetValues = verification.getTargetValues();</span>
+
+<span class="fc" id="L178">			int[] probabilityValuesShape = null;</span>
+
+<span class="fc" id="L180">			List&lt;? extends Number&gt; probabilityValues = null;</span>
+
+<span class="fc bfc" id="L182" title="All 2 branches covered.">			if(estimator instanceof Classifier){</span>
+<span class="fc" id="L183">				Classifier classifier = (Classifier)estimator;</span>
+
+<span class="fc bfc" id="L185" title="All 4 branches covered.">				if(classifier.hasProbabilityDistribution() &amp;&amp; verification.hasProbabilityValues()){</span>
+<span class="fc" id="L186">					probabilityValuesShape = verification.getProbabilityValuesShape();</span>
+
+<span class="fc" id="L188">					probabilityFields = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L190">					CategoricalLabel categoricalLabel = (CategoricalLabel)label;</span>
+
+<span class="fc" id="L192">					List&lt;String&gt; values = categoricalLabel.getValues();</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">					for(String value : values){</span>
+<span class="fc" id="L194">						probabilityFields.add(&quot;probability(&quot; + value + &quot;)&quot;); // XXX</span>
+<span class="fc" id="L195">					}</span>
+
+<span class="fc" id="L197">					ClassDictUtil.checkShapes(0, activeValuesShape, probabilityValuesShape);</span>
+<span class="fc" id="L198">					ClassDictUtil.checkShapes(1, probabilityFields.size(), probabilityValuesShape);</span>
+
+<span class="fc" id="L200">					probabilityValues = verification.getProbabilityValues();</span>
+				}
+			}
+
+<span class="fc" id="L204">			Number precision = verification.getPrecision();</span>
+<span class="fc" id="L205">			Number zeroThreshold = verification.getZeroThreshold();</span>
+
+<span class="fc" id="L207">			int rows = activeValuesShape[0];</span>
+
+<span class="fc" id="L209">			VerificationFields verificationFields = new VerificationFields();</span>
+
+<span class="fc" id="L211">			List&lt;List&lt;?&gt;&gt; data = new ArrayList&lt;&gt;();</span>
+
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">			if(activeFields != null){</span>
+
+<span class="fc bfc" id="L215" title="All 2 branches covered.">				for(int i = 0; i &lt; activeFields.size(); i++){</span>
+<span class="fc" id="L216">					VerificationField verificationField = createVerificationField(activeFields.get(i));</span>
+
+<span class="fc" id="L218">					verificationFields.addVerificationFields(verificationField);</span>
+
+<span class="fc" id="L220">					data.add(CMatrixUtil.getColumn(activeValues, rows, activeFields.size(), i));</span>
+				}
+			} // End if
+
+<span class="fc bfc" id="L224" title="All 2 branches covered.">			if(probabilityFields != null){</span>
+
+<span class="fc bfc" id="L226" title="All 2 branches covered.">				for(int i = 0; i &lt; probabilityFields.size(); i++){</span>
+<span class="fc" id="L227">					VerificationField verificationField = createVerificationField(probabilityFields.get(i))</span>
+<span class="fc" id="L228">						.setPrecision(precision.doubleValue())</span>
+<span class="fc" id="L229">						.setZeroThreshold(zeroThreshold.doubleValue());</span>
+
+<span class="fc" id="L231">					verificationFields.addVerificationFields(verificationField);</span>
+
+<span class="fc" id="L233">					data.add(CMatrixUtil.getColumn(probabilityValues, rows, probabilityFields.size(), i));</span>
+				}
+			} else
+
+			{
+<span class="fc bfc" id="L238" title="All 2 branches covered.">				for(int i = 0; i &lt; targetFields.size(); i++){</span>
+<span class="fc" id="L239">					VerificationField verificationField = createVerificationField(targetFields.get(i));</span>
+
+<span class="fc" id="L241">					DataType dataType = label.getDataType();</span>
+<span class="pc bfc" id="L242" title="All 2 branches covered.">					switch(dataType){</span>
+						case DOUBLE:
+						case FLOAT:
+<span class="fc" id="L245">							verificationField</span>
+<span class="fc" id="L246">								.setPrecision(precision.doubleValue())</span>
+<span class="fc" id="L247">								.setZeroThreshold(zeroThreshold.doubleValue());</span>
+<span class="fc" id="L248">							break;</span>
+						default:
+							break;
+					}
+
+<span class="fc" id="L253">					verificationFields.addVerificationFields(verificationField);</span>
+
+<span class="fc" id="L255">					data.add(CMatrixUtil.getColumn(targetValues, rows, targetFields.size(), i));</span>
+				}
+			}
+
+<span class="fc" id="L259">			List&lt;String&gt; keys = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L261" title="All 2 branches covered.">			for(VerificationField verificationField : verificationFields){</span>
+<span class="fc" id="L262">				keys.add(verificationField.getColumn());</span>
+<span class="fc" id="L263">			}</span>
+
+<span class="fc" id="L265">			DocumentBuilder documentBuilder = DOMUtil.createDocumentBuilder();</span>
+
+<span class="fc" id="L267">			InlineTable inlineTable = new InlineTable();</span>
+
+<span class="fc bfc" id="L269" title="All 2 branches covered.">			for(int i = 0; i &lt; rows; i++){</span>
+<span class="fc" id="L270">				Row row = new Row();</span>
+
+<span class="fc" id="L272">				Document document = documentBuilder.newDocument();</span>
+
+<span class="fc bfc" id="L274" title="All 2 branches covered.">				for(int j = 0; j &lt; data.size(); j++){</span>
+<span class="fc" id="L275">					List&lt;?&gt; column = data.get(j);</span>
+
+<span class="fc" id="L277">					Object cell = column.get(i);</span>
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">					if(cell == null){</span>
+<span class="nc" id="L279">						continue;</span>
+					}
+
+<span class="fc" id="L282">					Element element = document.createElement(keys.get(j));</span>
+<span class="fc" id="L283">					element.setTextContent(ValueUtil.formatValue(cell));</span>
+
+<span class="fc" id="L285">					row.addContent(element);</span>
+				}
+
+<span class="fc" id="L288">				inlineTable.addRows(row);</span>
+			}
+
+<span class="fc" id="L291">			ModelVerification modelVerification = new ModelVerification(verificationFields, inlineTable)</span>
+<span class="fc" id="L292">				.setRecordCount(rows);</span>
+
+<span class="fc" id="L294">			model.setModelVerification(modelVerification);</span>
+		}
+
+<span class="fc" id="L297">		PMML pmml = encoder.encodePMML(model);</span>
+
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">		if(repr != null){</span>
+<span class="nc" id="L300">			Extension extension = new Extension()</span>
+<span class="nc" id="L301">				.addContent(repr);</span>
+
+<span class="nc" id="L303">			MiningBuildTask miningBuildTask = new MiningBuildTask()</span>
+<span class="nc" id="L304">				.addExtensions(extension);</span>
+
+<span class="nc" id="L306">			pmml.setMiningBuildTask(miningBuildTask);</span>
+		}
+
+<span class="fc" id="L309">		return pmml;</span>
+	}
+
+	private List&lt;Feature&gt; initFeatures(PyClassDict object, OpType opType, DataType dataType, SkLearnEncoder encoder){
+<span class="fc" id="L313">		List&lt;String&gt; activeFields = getActiveFields();</span>
+
+<span class="pc bpc" id="L315" title="1 of 2 branches missed.">		if(activeFields == null){</span>
+<span class="nc" id="L316">			int numberOfFeatures = -1;</span>
+
+<span class="nc bnc" id="L318" title="All 2 branches missed.">			if(object instanceof HasNumberOfFeatures){</span>
+<span class="nc" id="L319">				HasNumberOfFeatures hasNumberOfFeatures = (HasNumberOfFeatures)object;</span>
+
+<span class="nc" id="L321">				numberOfFeatures = hasNumberOfFeatures.getNumberOfFeatures();</span>
+			} // End if
+
+<span class="nc bnc" id="L324" title="All 2 branches missed.">			if(numberOfFeatures &lt; 0){</span>
+<span class="nc" id="L325">				throw new IllegalArgumentException(&quot;The first transformer or estimator object (&quot; + ClassDictUtil.formatClass(object) + &quot;) does not specify the number of input features&quot;);</span>
+			}
+
+<span class="nc" id="L328">			activeFields = new ArrayList&lt;&gt;(numberOfFeatures);</span>
+
+<span class="nc bnc" id="L330" title="All 2 branches missed.">			for(int i = 0, max = numberOfFeatures; i &lt; max; i++){</span>
+<span class="nc" id="L331">				activeFields.add(&quot;x&quot; + String.valueOf(i + 1));</span>
+			}
+
+<span class="nc" id="L334">			logger.warn(&quot;Attribute \'&quot; + ClassDictUtil.formatMember(this, &quot;active_fields&quot;) + &quot;\' is not set. Assuming {} as the names of active fields&quot;, activeFields);</span>
+		}
+
+<span class="fc" id="L337">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L339" title="All 2 branches covered.">		for(String activeField : activeFields){</span>
+<span class="fc" id="L340">			DataField dataField = encoder.createDataField(FieldName.create(activeField), opType, dataType);</span>
+
+<span class="fc" id="L342">			result.add(new WildcardFeature(encoder, dataField));</span>
+<span class="fc" id="L343">		}</span>
+
+<span class="fc" id="L345">		return result;</span>
+	}
+
+	@Override
+	public List&lt;? extends Transformer&gt; getTransformers(){
+<span class="fc" id="L350">		List&lt;Object[]&gt; steps = getSteps();</span>
+
+<span class="pc bpc" id="L352" title="1 of 2 branches missed.">		if(steps.size() &gt; 0){</span>
+<span class="fc" id="L353">			steps = steps.subList(0, steps.size() - 1);</span>
+		}
+
+<span class="fc" id="L356">		return TupleUtil.extractElementList(steps, 1, Transformer.class);</span>
+	}
+
+	@Override
+	public Estimator getEstimator(){
+<span class="fc" id="L361">		List&lt;Object[]&gt; steps = getSteps();</span>
+
+<span class="pc bpc" id="L363" title="1 of 2 branches missed.">		if(steps.size() &lt; 1){</span>
+<span class="nc" id="L364">			throw new IllegalArgumentException(&quot;Expected one or more elements, got zero elements&quot;);</span>
+		}
+
+<span class="fc" id="L367">		Object[] lastStep = steps.get(steps.size() - 1);</span>
+
+<span class="fc" id="L369">		return TupleUtil.extractElement(lastStep, 1, Estimator.class);</span>
+	}
+
+	@Override
+	public List&lt;Object[]&gt; getSteps(){
+<span class="fc" id="L374">		return super.getSteps();</span>
+	}
+
+	public PMMLPipeline setSteps(List&lt;Object[]&gt; steps){
+<span class="fc" id="L378">		put(&quot;steps&quot;, steps);</span>
+
+<span class="fc" id="L380">		return this;</span>
+	}
+
+	public List&lt;String&gt; getActiveFields(){
+
+<span class="fc bfc" id="L385" title="All 2 branches covered.">		if(!containsKey(&quot;active_fields&quot;)){</span>
+<span class="fc" id="L386">			return null;</span>
+		}
+
+<span class="fc" id="L389">		return (List)getArray(&quot;active_fields&quot;, String.class);</span>
+	}
+
+	public PMMLPipeline setActiveFields(List&lt;String&gt; activeFields){
+<span class="fc" id="L393">		put(&quot;active_fields&quot;, toArray(activeFields));</span>
+
+<span class="fc" id="L395">		return this;</span>
+	}
+
+	public List&lt;String&gt; getTargetFields(){
+
+		// SkLearn2PMML 0.24.3
+<span class="fc bfc" id="L401" title="All 2 branches covered.">		if(containsKey(&quot;target_field&quot;)){</span>
+<span class="fc" id="L402">			return Collections.singletonList((String)get(&quot;target_field&quot;));</span>
+		} // End if
+
+		// SkLearn2PMML 0.25+
+<span class="fc bfc" id="L406" title="All 2 branches covered.">		if(!containsKey(&quot;target_fields&quot;)){</span>
+<span class="fc" id="L407">			return null;</span>
+		}
+
+<span class="fc" id="L410">		return (List)getArray(&quot;target_fields&quot;, String.class);</span>
+	}
+
+	public PMMLPipeline setTargetFields(List&lt;String&gt; targetFields){
+<span class="fc" id="L414">		put(&quot;target_fields&quot;, toArray(targetFields));</span>
+
+<span class="fc" id="L416">		return this;</span>
+	}
+
+	public String getRepr(){
+<span class="fc" id="L420">		return (String)get(&quot;repr_&quot;);</span>
+	}
+
+	public PMMLPipeline setRepr(String repr){
+<span class="fc" id="L424">		put(&quot;repr_&quot;, repr);</span>
+
+<span class="fc" id="L426">		return this;</span>
+	}
+
+	public Verification getVerification(){
+<span class="fc" id="L430">		return (Verification)get(&quot;verification&quot;);</span>
+	}
+
+	public PMMLPipeline setVerification(Verification verification){
+<span class="nc" id="L434">		put(&quot;verification&quot;, verification);</span>
+
+<span class="nc" id="L436">		return this;</span>
+	}
+
+	static
+	private VerificationField createVerificationField(String name){
+<span class="fc" id="L441">		String tagName = name;</span>
+
+<span class="fc" id="L443">		Matcher matcher = PMMLPipeline.FUNCTION.matcher(tagName);</span>
+<span class="fc bfc" id="L444" title="All 2 branches covered.">		if(matcher.matches()){</span>
+<span class="fc" id="L445">			tagName = (matcher.group(1) + &quot;_&quot; + matcher.group(2));</span>
+		}
+
+<span class="fc" id="L448">		VerificationField verificationField = new VerificationField()</span>
+<span class="fc" id="L449">			.setField(FieldName.create(name))</span>
+<span class="fc" id="L450">			.setColumn(XMLUtil.createTagName(tagName));</span>
+
+<span class="fc" id="L452">		return verificationField;</span>
+	}
+
+	static
+	private NDArray toArray(List&lt;String&gt; strings){
+<span class="fc" id="L457">		NDArray result = new NDArray();</span>
+<span class="fc" id="L458">		result.put(&quot;data&quot;, strings);</span>
+<span class="fc" id="L459">		result.put(&quot;fortran_order&quot;, Boolean.FALSE);</span>
+
+<span class="fc" id="L461">		return result;</span>
+	}
+
+<span class="fc" id="L464">	private static final Pattern FUNCTION = Pattern.compile(&quot;^(.+)\\((.+)\\)$&quot;);</span>
+
+<span class="fc" id="L466">	private static final Logger logger = LoggerFactory.getLogger(PMMLPipeline.class);</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

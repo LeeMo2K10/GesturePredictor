@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseMultilayerPerceptronUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.neural_network</a> &gt; <span class="el_source">BaseMultilayerPerceptronUtil.java</span></div><h1>BaseMultilayerPerceptronUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.neural_network;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.common.collect.Iterables;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.Entity;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.neural_network.Connection;
+import org.dmg.pmml.neural_network.NeuralInputs;
+import org.dmg.pmml.neural_network.NeuralLayer;
+import org.dmg.pmml.neural_network.NeuralNetwork;
+import org.dmg.pmml.neural_network.NeuralOutputs;
+import org.dmg.pmml.neural_network.Neuron;
+import org.jpmml.converter.CMatrixUtil;
+import org.jpmml.converter.CategoricalLabel;
+import org.jpmml.converter.ContinuousLabel;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.Label;
+import org.jpmml.converter.ModelUtil;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.converter.neural_network.NeuralNetworkUtil;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.HasArray;
+
+public class BaseMultilayerPerceptronUtil {
+
+<span class="nc" id="L48">	private BaseMultilayerPerceptronUtil(){</span>
+<span class="nc" id="L49">	}</span>
+
+	static
+	public int getNumberOfFeatures(List&lt;? extends HasArray&gt; coefs){
+<span class="fc" id="L53">		HasArray input = coefs.get(0);</span>
+
+<span class="fc" id="L55">		int[] shape = input.getArrayShape();</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">		if(shape.length != 2){</span>
+<span class="nc" id="L57">			throw new IllegalArgumentException();</span>
+		}
+
+<span class="fc" id="L60">		return shape[0];</span>
+	}
+
+	static
+	public NeuralNetwork encodeNeuralNetwork(MiningFunction miningFunction, String activation, List&lt;? extends HasArray&gt; coefs, List&lt;? extends HasArray&gt; intercepts, Schema schema){
+<span class="fc" id="L65">		NeuralNetwork.ActivationFunction activationFunction = parseActivationFunction(activation);</span>
+
+<span class="fc" id="L67">		ClassDictUtil.checkSize(coefs, intercepts);</span>
+
+<span class="fc" id="L69">		Label label = schema.getLabel();</span>
+<span class="fc" id="L70">		List&lt;Feature&gt; features = schema.getFeatures();</span>
+
+<span class="fc" id="L72">		NeuralInputs neuralInputs = NeuralNetworkUtil.createNeuralInputs(features, DataType.DOUBLE);</span>
+
+<span class="fc" id="L74">		List&lt;? extends Entity&gt; entities = neuralInputs.getNeuralInputs();</span>
+
+<span class="fc" id="L76">		List&lt;NeuralLayer&gt; neuralLayers = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L78" title="All 2 branches covered.">		for(int layer = 0; layer &lt; coefs.size(); layer++){</span>
+<span class="fc" id="L79">			HasArray coef = coefs.get(layer);</span>
+<span class="fc" id="L80">			HasArray intercept = intercepts.get(layer);</span>
+
+<span class="fc" id="L82">			int[] shape = coef.getArrayShape();</span>
+
+<span class="fc" id="L84">			int rows = shape[0];</span>
+<span class="fc" id="L85">			int columns = shape[1];</span>
+
+<span class="fc" id="L87">			NeuralLayer neuralLayer = new NeuralLayer();</span>
+
+<span class="fc" id="L89">			List&lt;?&gt; coefMatrix = coef.getArrayContent();</span>
+<span class="fc" id="L90">			List&lt;?&gt; interceptVector = intercept.getArrayContent();</span>
+
+<span class="fc bfc" id="L92" title="All 2 branches covered.">			for(int column = 0; column &lt; columns; column++){</span>
+<span class="fc" id="L93">				List&lt;Double&gt; weights = (List)CMatrixUtil.getColumn(coefMatrix, rows, columns, column);</span>
+<span class="fc" id="L94">				Double bias = ValueUtil.asDouble((Number)interceptVector.get(column));</span>
+
+<span class="fc" id="L96">				Neuron neuron = NeuralNetworkUtil.createNeuron(entities, weights, bias)</span>
+<span class="fc" id="L97">					.setId(String.valueOf(layer + 1) + &quot;/&quot; + String.valueOf(column + 1));</span>
+
+<span class="fc" id="L99">				neuralLayer.addNeurons(neuron);</span>
+			}
+
+<span class="fc bfc" id="L102" title="All 2 branches covered.">			if(layer == (coefs.size() - 1)){</span>
+<span class="fc" id="L103">				neuralLayer.setActivationFunction(NeuralNetwork.ActivationFunction.IDENTITY);</span>
+
+<span class="pc bpc" id="L105" title="1 of 3 branches missed.">				switch(miningFunction){</span>
+					case REGRESSION:
+<span class="fc" id="L107">						break;</span>
+					case CLASSIFICATION:
+<span class="fc" id="L109">						CategoricalLabel categoricalLabel = (CategoricalLabel)label;</span>
+
+						// Binary classification
+<span class="fc bfc" id="L112" title="All 2 branches covered.">						if(categoricalLabel.size() == 2){</span>
+<span class="fc" id="L113">							neuralLayers.add(neuralLayer);</span>
+
+<span class="fc" id="L115">							neuralLayer = encodeLogisticTransform(getOnlyNeuron(neuralLayer));</span>
+
+<span class="fc" id="L117">							neuralLayers.add(neuralLayer);</span>
+
+<span class="fc" id="L119">							neuralLayer = encodeLabelBinarizerTransform(getOnlyNeuron(neuralLayer));</span>
+						} else
+
+						// Multi-class classification
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">						if(categoricalLabel.size() &gt; 2){</span>
+<span class="fc" id="L124">							neuralLayer.setNormalizationMethod(NeuralNetwork.NormalizationMethod.SOFTMAX);</span>
+						} else
+
+						{
+<span class="nc" id="L128">							throw new IllegalArgumentException();</span>
+						}
+						break;
+					default:
+						break;
+				}
+			}
+
+<span class="fc" id="L136">			entities = neuralLayer.getNeurons();</span>
+
+<span class="fc" id="L138">			neuralLayers.add(neuralLayer);</span>
+		}
+
+<span class="fc" id="L141">		NeuralOutputs neuralOutputs = null;</span>
+
+<span class="pc bpc" id="L143" title="1 of 3 branches missed.">		switch(miningFunction){</span>
+			case REGRESSION:
+<span class="fc" id="L145">				neuralOutputs = NeuralNetworkUtil.createRegressionNeuralOutputs(entities, (ContinuousLabel)label);</span>
+<span class="fc" id="L146">				break;</span>
+			case CLASSIFICATION:
+<span class="fc" id="L148">				neuralOutputs = NeuralNetworkUtil.createClassificationNeuralOutputs(entities, (CategoricalLabel)label);</span>
+<span class="fc" id="L149">				break;</span>
+			default:
+				break;
+		}
+
+<span class="fc" id="L154">		NeuralNetwork neuralNetwork = new NeuralNetwork(miningFunction, activationFunction, ModelUtil.createMiningSchema(label), neuralInputs, neuralLayers)</span>
+<span class="fc" id="L155">			.setNeuralOutputs(neuralOutputs);</span>
+
+<span class="fc" id="L157">		return neuralNetwork;</span>
+	}
+
+	static
+	private NeuralLayer encodeLogisticTransform(Neuron input){
+<span class="fc" id="L162">		NeuralLayer neuralLayer = new NeuralLayer()</span>
+<span class="fc" id="L163">			.setActivationFunction(NeuralNetwork.ActivationFunction.LOGISTIC);</span>
+
+<span class="fc" id="L165">		Neuron neuron = new Neuron()</span>
+<span class="fc" id="L166">			.setId(&quot;logistic/1&quot;)</span>
+<span class="fc" id="L167">			.setBias(0d)</span>
+<span class="fc" id="L168">			.addConnections(new Connection(input.getId(), 1d));</span>
+
+<span class="fc" id="L170">		neuralLayer.addNeurons(neuron);</span>
+
+<span class="fc" id="L172">		return neuralLayer;</span>
+	}
+
+	static
+	private NeuralLayer encodeLabelBinarizerTransform(Neuron input){
+<span class="fc" id="L177">		NeuralLayer neuralLayer = new NeuralLayer()</span>
+<span class="fc" id="L178">			.setActivationFunction(NeuralNetwork.ActivationFunction.IDENTITY);</span>
+
+<span class="fc" id="L180">		Neuron noEventNeuron = new Neuron()</span>
+<span class="fc" id="L181">			.setId(&quot;event/false&quot;)</span>
+<span class="fc" id="L182">			.setBias(1d)</span>
+<span class="fc" id="L183">			.addConnections(new Connection(input.getId(), -1d));</span>
+
+<span class="fc" id="L185">		Neuron eventNeuron = new Neuron()</span>
+<span class="fc" id="L186">			.setId(&quot;event/true&quot;)</span>
+<span class="fc" id="L187">			.setBias(0d)</span>
+<span class="fc" id="L188">			.addConnections(new Connection(input.getId(), 1d));</span>
+
+<span class="fc" id="L190">		neuralLayer.addNeurons(noEventNeuron, eventNeuron);</span>
+
+<span class="fc" id="L192">		return neuralLayer;</span>
+	}
+
+	static
+	private Neuron getOnlyNeuron(NeuralLayer neuralLayer){
+<span class="fc" id="L197">		List&lt;Neuron&gt; neurons = neuralLayer.getNeurons();</span>
+
+<span class="fc" id="L199">		return Iterables.getOnlyElement(neurons);</span>
+	}
+
+	static
+	private NeuralNetwork.ActivationFunction parseActivationFunction(String activation){
+
+<span class="pc bpc" id="L205" title="12 of 18 branches missed.">		switch(activation){</span>
+			case &quot;identity&quot;:
+<span class="nc" id="L207">				return NeuralNetwork.ActivationFunction.IDENTITY;</span>
+			case &quot;logistic&quot;:
+<span class="nc" id="L209">				return NeuralNetwork.ActivationFunction.LOGISTIC;</span>
+			case &quot;relu&quot;:
+<span class="fc" id="L211">				return NeuralNetwork.ActivationFunction.RECTIFIER;</span>
+			case &quot;tanh&quot;:
+<span class="fc" id="L213">				return NeuralNetwork.ActivationFunction.TANH;</span>
+			default:
+<span class="nc" id="L215">				throw new IllegalArgumentException(activation);</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

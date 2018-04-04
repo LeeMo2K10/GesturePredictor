@@ -1,0 +1,225 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+JPMML-SkLearn,sklearn.ensemble.forest,RandomForestRegressor,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.ensemble.forest,BaseForestUtil,3,22,0,0,2,4,1,1,1,1
+JPMML-SkLearn,sklearn.ensemble.forest,ExtraTreesClassifier,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.ensemble.forest,ExtraTreesRegressor,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.ensemble.forest,RandomForestClassifier,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.ensemble.forest,BaseForestRegressor,2,16,0,0,1,4,1,3,1,3
+JPMML-SkLearn,sklearn.ensemble.forest,BaseForestClassifier,0,26,0,0,0,7,0,4,0,4
+JPMML-SkLearn,sklearn2pmml,SelectorProxy,5,22,0,0,2,6,1,4,1,4
+JPMML-SkLearn,sklearn2pmml,EstimatorProxy.new CastFunction() {...},26,0,0,0,2,0,2,0,2,0
+JPMML-SkLearn,sklearn2pmml,PMMLPipeline,135,748,16,57,23,164,14,42,1,18
+JPMML-SkLearn,sklearn2pmml,PMMLPipeline.new Object() {...},4,33,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn2pmml,Verification,0,46,0,0,0,11,0,10,0,10
+JPMML-SkLearn,sklearn2pmml,EstimatorProxy,80,21,3,1,20,7,10,3,8,3
+JPMML-SkLearn,joblib,NumpyArrayWrapper,5,97,4,6,1,17,4,8,0,6
+JPMML-SkLearn,joblib,NDArrayWrapperConstructor,14,16,0,0,3,6,2,2,2,2
+JPMML-SkLearn,joblib,NDArrayWrapper,90,0,10,0,16,0,12,0,7,0
+JPMML-SkLearn,joblib,NDArrayWrapperConstructor.new NDArrayWrapper() {...},17,0,0,0,3,0,2,0,2,0
+JPMML-SkLearn,sklearn.ensemble,EnsembleRegressor,18,10,0,0,5,3,3,2,3,2
+JPMML-SkLearn,sklearn.ensemble,EnsembleClassifier,18,10,0,0,5,3,3,2,3,2
+JPMML-SkLearn,tpot.builtins,ContinuousOutputFeature,13,98,1,5,3,24,2,7,1,5
+JPMML-SkLearn,tpot.builtins,CategoricalOutputFeature,79,0,4,0,21,0,8,0,6,0
+JPMML-SkLearn,tpot.builtins,OutputUtil,3,26,1,5,2,7,2,3,1,1
+JPMML-SkLearn,tpot.builtins,CategoricalOutputFeature.new Object() {...},26,0,0,0,1,0,1,0,1,0
+JPMML-SkLearn,tpot.builtins,StackingEstimator.new Object() {...},2,17,0,0,0,1,0,1,0,1
+JPMML-SkLearn,tpot.builtins,StackingEstimator,101,86,6,1,17,18,4,3,0,3
+JPMML-SkLearn,lightgbm.sklearn,LGBMClassifier,0,18,0,0,0,5,0,4,0,4
+JPMML-SkLearn,lightgbm.sklearn,LGBMRegressor,0,18,0,0,0,5,0,4,0,4
+JPMML-SkLearn,lightgbm.sklearn,Booster,36,48,6,4,1,12,4,5,0,4
+JPMML-SkLearn,lightgbm.sklearn,BoosterUtil,3,45,0,0,2,11,1,3,1,3
+JPMML-SkLearn,sklearn,Classifier,0,15,0,0,0,6,0,5,0,5
+JPMML-SkLearn,sklearn,Selector,6,54,1,5,2,12,2,5,1,3
+JPMML-SkLearn,sklearn,Clusterer,2,7,0,0,1,3,1,2,1,2
+JPMML-SkLearn,sklearn,TypeUtil,3,97,0,6,2,20,1,5,1,2
+JPMML-SkLearn,sklearn,Initializer,4,21,0,0,1,5,1,3,1,3
+JPMML-SkLearn,sklearn,LabelEncoderClassifier,0,17,0,0,0,5,0,3,0,3
+JPMML-SkLearn,sklearn,TransformerUtil,3,33,0,6,2,13,1,4,1,1
+JPMML-SkLearn,sklearn,Regressor,0,9,0,0,0,4,0,3,0,3
+JPMML-SkLearn,sklearn,Transformer,5,52,2,2,1,15,2,7,0,7
+JPMML-SkLearn,sklearn,ClassifierUtil.new Function() {...},5,14,2,2,1,4,2,2,0,2
+JPMML-SkLearn,sklearn,TypeUtil.new Function() {...},0,6,0,0,0,2,0,2,0,2
+JPMML-SkLearn,sklearn,ClassifierUtil,22,19,1,1,3,6,2,3,1,3
+JPMML-SkLearn,sklearn,Estimator,2,13,0,0,1,4,1,3,1,3
+JPMML-SkLearn,sklearn.svm,BaseLibSVMRegressor,0,114,0,0,0,23,0,12,0,12
+JPMML-SkLearn,sklearn.svm,BaseLibSVMClassifier,0,150,0,2,0,32,0,15,0,14
+JPMML-SkLearn,sklearn.svm,SVR,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.svm,NuSVC,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.svm,OneClassSVM,0,30,0,0,0,7,0,3,0,3
+JPMML-SkLearn,sklearn.svm,NuSVR,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.svm,OneClassSVM.new OutlierTransformation() {...},0,21,0,0,0,2,0,2,0,2
+JPMML-SkLearn,sklearn.svm,SVC,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.svm,LinearSVR,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.svm,SupportVectorMachineUtil.new Function() {...},0,6,0,0,0,2,0,2,0,2
+JPMML-SkLearn,sklearn.svm,SupportVectorMachineUtil,51,30,15,3,11,5,13,2,1,2
+JPMML-SkLearn,sklearn2pmml.preprocessing,PMMLLabelBinarizer,4,17,1,1,1,6,1,4,0,4
+JPMML-SkLearn,sklearn2pmml.preprocessing,MultiLookupTransformer,3,110,2,6,2,22,2,7,0,5
+JPMML-SkLearn,sklearn2pmml.preprocessing,PMMLLabelEncoder,5,0,0,0,2,0,1,0,1,0
+JPMML-SkLearn,sklearn2pmml.preprocessing,LookupTransformer,6,250,3,11,3,48,3,12,0,8
+JPMML-SkLearn,sklearn2pmml.preprocessing,LookupTransformer.new Feature() {...},0,24,0,0,0,4,0,2,0,2
+JPMML-SkLearn,sklearn2pmml.preprocessing,ExpressionTransformer,0,39,0,0,0,7,0,3,0,3
+JPMML-SkLearn,sklearn.linear_model.logistic,LogisticRegression,5,21,1,1,1,6,1,3,0,3
+JPMML-SkLearn,numpy,DType,67,259,30,15,5,36,23,16,0,11
+JPMML-SkLearn,sklearn.linear_model.coordinate_descent,ElasticNet,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.linear_model.coordinate_descent,Lasso,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.linear_model.base,LinearRegression,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.ensemble.bagging,BaggingClassifier,0,51,0,4,0,14,0,5,0,3
+JPMML-SkLearn,sklearn.ensemble.bagging,BaggingRegressor,0,26,0,0,0,7,0,3,0,3
+JPMML-SkLearn,sklearn.ensemble.bagging,BaggingUtil.new Function() {...},0,7,0,0,0,2,0,2,0,2
+JPMML-SkLearn,sklearn.ensemble.bagging,BaggingUtil,3,60,0,2,2,13,1,3,1,2
+JPMML-SkLearn,collections,DefaultDict,0,19,0,0,0,5,0,3,0,3
+JPMML-SkLearn,numpy.random,RandomState,0,35,0,0,0,5,0,3,0,3
+JPMML-SkLearn,org.jpmml.sklearn.visitors,TreeModelCompactor,44,293,17,42,11,84,17,22,0,9
+JPMML-SkLearn,org.jpmml.sklearn.visitors,TreeModelCompactor.new Object() {...},2,17,0,0,0,1,0,1,0,1
+JPMML-SkLearn,org.jpmml.sklearn.visitors,TreeModelFlattener,21,275,7,45,5,91,7,30,0,11
+JPMML-SkLearn,sklearn.linear_model,BaseLinearRegressor,0,45,0,0,0,10,0,6,0,6
+JPMML-SkLearn,sklearn.linear_model,BaseLinearClassifier,4,139,1,7,1,29,1,9,0,6
+JPMML-SkLearn,sklearn.tree,TreeModelUtil.new Function() {...},0,26,0,0,0,3,0,2,0,2
+JPMML-SkLearn,sklearn.tree,TreeModelUtil.new Function() {...},0,21,0,2,0,6,0,3,0,2
+JPMML-SkLearn,sklearn.tree,ExtraTreeClassifier,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.tree,DecisionTreeClassifier,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.tree,PresortBestSplitter,35,0,0,0,5,0,3,0,3,0
+JPMML-SkLearn,sklearn.tree,TreeRegressor,0,22,0,0,0,6,0,4,0,4
+JPMML-SkLearn,sklearn.tree,RegressionCriterion,19,0,0,0,5,0,3,0,3,0
+JPMML-SkLearn,sklearn.tree,Tree,0,62,0,0,0,12,0,10,0,10
+JPMML-SkLearn,sklearn.tree,DecisionTreeRegressor,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.tree,ExtraTreeRegressor,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.tree,TreeModelUtil,32,420,4,24,5,91,5,18,1,8
+JPMML-SkLearn,sklearn.tree,TreeClassifier,0,28,0,0,0,7,0,4,0,4
+JPMML-SkLearn,xgboost.sklearn,BoosterUtil,3,41,0,0,2,10,1,3,1,3
+JPMML-SkLearn,xgboost.sklearn,Booster,36,45,6,4,1,11,4,5,0,4
+JPMML-SkLearn,xgboost.sklearn,XGBRegressor,2,18,0,0,1,5,1,4,1,4
+JPMML-SkLearn,xgboost.sklearn,XGBClassifier,2,18,0,0,1,5,1,4,1,4
+JPMML-SkLearn,sklearn.ensemble.voting_classifier,VotingClassifier,13,134,8,16,2,27,8,12,0,7
+JPMML-SkLearn,sklearn.dummy,DummyClassifier,5,168,5,11,1,33,5,11,0,6
+JPMML-SkLearn,sklearn.dummy,DummyRegressor,0,28,0,0,0,7,0,4,0,4
+JPMML-SkLearn,sklearn2pmml.decoration,CategoricalDomain,2,145,2,4,1,34,2,8,0,7
+JPMML-SkLearn,sklearn2pmml.decoration,CategoricalDomain.new Function() {...},0,9,0,0,0,2,0,2,0,2
+JPMML-SkLearn,sklearn2pmml.decoration,ContinuousDomain,0,184,2,6,0,44,2,9,0,7
+JPMML-SkLearn,sklearn2pmml.decoration,MultiDomain,4,60,0,2,1,12,1,5,1,4
+JPMML-SkLearn,sklearn2pmml.decoration,Domain.new InvalidValueDecorator() {...},6,17,1,1,1,4,1,2,0,2
+JPMML-SkLearn,sklearn2pmml.decoration,DomainUtil,59,50,28,12,10,8,24,5,1,2
+JPMML-SkLearn,sklearn2pmml.decoration,Domain,32,195,12,16,8,54,9,19,0,14
+JPMML-SkLearn,sklearn.cluster,MiniBatchKMeans,3,11,1,1,1,4,1,2,0,2
+JPMML-SkLearn,sklearn.cluster,KMeans,0,127,0,6,0,28,0,9,0,6
+JPMML-SkLearn,sklearn.feature_extraction,DictVectorizer,0,131,0,10,0,31,0,10,0,5
+JPMML-SkLearn,sklearn2pmml.feature_extraction.text,Splitter,0,16,0,0,0,5,0,3,0,3
+JPMML-SkLearn,sklearn.feature_extraction.text,TfidfVectorizer.new Object() {...},4,29,0,0,0,1,0,1,0,1
+JPMML-SkLearn,sklearn.feature_extraction.text,TfidfTransformer,0,33,0,0,0,8,0,5,0,5
+JPMML-SkLearn,sklearn.feature_extraction.text,CountVectorizer.new Feature() {...},0,38,0,2,0,6,0,3,0,2
+JPMML-SkLearn,sklearn.feature_extraction.text,CountVectorizer.new Feature() {...},4,9,0,0,1,1,1,1,1,1
+JPMML-SkLearn,sklearn.feature_extraction.text,CountVectorizer,69,501,21,21,8,89,21,21,2,19
+JPMML-SkLearn,sklearn.feature_extraction.text,TfidfVectorizer,34,145,9,8,5,37,9,7,0,7
+JPMML-SkLearn,sklearn.discriminant_analysis,LinearDiscriminantAnalysis,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,org.jpmml.sklearn,ClassDictUtil,212,121,18,18,40,20,18,11,6,5
+JPMML-SkLearn,org.jpmml.sklearn,SkLearnEncoder,6,176,1,13,1,47,1,16,0,10
+JPMML-SkLearn,org.jpmml.sklearn,StringProvider,2,63,2,4,0,18,2,4,0,3
+JPMML-SkLearn,org.jpmml.sklearn,PickleUtil.new Unpickler() {...},0,38,0,4,0,10,0,4,0,2
+JPMML-SkLearn,org.jpmml.sklearn,FileStorage,44,0,2,0,13,0,6,0,5,0
+JPMML-SkLearn,org.jpmml.sklearn,TupleUtil,3,39,0,0,2,9,1,4,1,4
+JPMML-SkLearn,org.jpmml.sklearn,StreamProvider,54,0,6,0,16,0,8,0,5,0
+JPMML-SkLearn,org.jpmml.sklearn,PyClassDict,112,115,8,8,8,31,6,12,0,10
+JPMML-SkLearn,org.jpmml.sklearn,TokenMgrException,175,0,17,0,37,0,18,0,6,0
+JPMML-SkLearn,org.jpmml.sklearn,ParseException,340,0,33,0,71,0,27,0,7,0
+JPMML-SkLearn,org.jpmml.sklearn,ExpressionTranslatorTokenManager,453,656,97,66,113,133,74,42,9,10
+JPMML-SkLearn,org.jpmml.sklearn,ExtensionObjectConstructor,0,18,0,0,0,6,0,3,0,3
+JPMML-SkLearn,org.jpmml.sklearn,CastFunction,13,25,1,1,3,10,1,4,0,4
+JPMML-SkLearn,org.jpmml.sklearn,TupleUtil.new CastFunction() {...},12,4,0,0,1,1,1,1,1,1
+JPMML-SkLearn,org.jpmml.sklearn,TupleUtil.new Function() {...},0,11,0,0,0,2,0,2,0,2
+JPMML-SkLearn,org.jpmml.sklearn,TupleUtil.new CastFunction() {...},12,4,0,0,1,1,1,1,1,1
+JPMML-SkLearn,org.jpmml.sklearn,CompressedInputStreamStorage.new FilterInputStream() {...},20,29,2,2,2,8,2,2,0,2
+JPMML-SkLearn,org.jpmml.sklearn,PickleUtil,113,205,17,19,22,46,15,9,2,4
+JPMML-SkLearn,org.jpmml.sklearn,InputStreamStorage,14,29,2,2,2,12,3,4,1,4
+JPMML-SkLearn,org.jpmml.sklearn,SkLearnUtil,8,87,1,13,3,19,2,9,1,3
+JPMML-SkLearn,org.jpmml.sklearn,SimpleCharStream,681,269,41,15,112,61,39,16,14,12
+JPMML-SkLearn,org.jpmml.sklearn,PyClassDict.new CastFunction() {...},20,10,0,0,1,1,1,1,1,1
+JPMML-SkLearn,org.jpmml.sklearn,PyClassDict.new CastFunction() {...},20,10,0,0,1,1,1,1,1,1
+JPMML-SkLearn,org.jpmml.sklearn,PyClassDict.new CastFunction() {...},20,10,0,0,1,1,1,1,1,1
+JPMML-SkLearn,org.jpmml.sklearn,CClassDict,108,100,7,7,10,30,7,9,1,8
+JPMML-SkLearn,org.jpmml.sklearn,ClassDictConstructorUtil,15,54,1,1,6,9,2,2,1,2
+JPMML-SkLearn,org.jpmml.sklearn,ExpressionTranslatorConstants,84,0,0,0,1,0,1,0,1,0
+JPMML-SkLearn,org.jpmml.sklearn,XMLUtil,46,46,6,8,12,12,5,6,1,3
+JPMML-SkLearn,org.jpmml.sklearn,ExpressionTranslator,468,529,56,44,86,121,48,34,9,20
+JPMML-SkLearn,org.jpmml.sklearn,ClassDictUtil.new Comparator() {...},11,0,0,0,2,0,2,0,2,0
+JPMML-SkLearn,org.jpmml.sklearn,Main,311,0,24,0,73,0,20,0,8,0
+JPMML-SkLearn,org.jpmml.sklearn,ObjectConstructor,98,82,14,2,20,23,10,9,2,9
+JPMML-SkLearn,org.jpmml.sklearn,Token,14,20,0,0,5,7,4,3,4,3
+JPMML-SkLearn,org.jpmml.sklearn,CompressedInputStreamStorage,6,101,4,8,2,25,4,6,0,4
+JPMML-SkLearn,sklearn.linear_model.ridge,Ridge,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.linear_model.ridge,RidgeClassifier,0,19,0,0,0,6,0,4,0,4
+JPMML-SkLearn,sklearn.neighbors,BinaryTree,0,76,0,0,0,8,0,4,0,4
+JPMML-SkLearn,sklearn.neighbors,KNeighborsClassifier,0,86,0,0,0,21,0,11,0,11
+JPMML-SkLearn,sklearn.neighbors,KNeighborsRegressor,0,73,0,0,0,18,0,11,0,11
+JPMML-SkLearn,sklearn.neighbors,DistanceMetric,0,40,0,0,0,8,0,4,0,4
+JPMML-SkLearn,sklearn.neighbors,KNeighborsClassifier.new Function() {...},0,17,0,0,0,3,0,2,0,2
+JPMML-SkLearn,sklearn.neighbors,KNeighborsUtil,24,299,7,12,7,58,8,5,1,2
+JPMML-SkLearn,sklearn.naive_bayes,GaussianNB,0,248,0,6,0,43,0,12,0,9
+JPMML-SkLearn,numpy.core,NDArrayUtil.TypeDescriptor.Kind,15,117,4,6,4,18,5,9,1,4
+JPMML-SkLearn,numpy.core,NDArrayUtil.TypeDescriptor,28,147,11,19,15,48,11,19,0,9
+JPMML-SkLearn,numpy.core,NDArrayUtil,230,469,25,36,52,99,24,31,6,18
+JPMML-SkLearn,numpy.core,UFunc,5,28,0,0,1,6,1,4,1,4
+JPMML-SkLearn,numpy.core,NDArrayUtil.new Object() {...},8,53,0,0,0,1,0,1,0,1
+JPMML-SkLearn,numpy.core,Scalar,54,91,8,4,5,22,7,9,1,9
+JPMML-SkLearn,numpy.core,NDArray,51,186,15,17,7,36,13,17,0,14
+JPMML-SkLearn,sklearn.pipeline,FeatureUnion,4,59,0,2,1,15,1,6,1,5
+JPMML-SkLearn,sklearn.pipeline,Pipeline,13,94,3,7,4,22,4,8,1,6
+JPMML-SkLearn,sklearn_pandas,CategoricalImputer,0,59,0,4,0,15,0,7,0,5
+JPMML-SkLearn,sklearn_pandas,TransformerPipeline,4,5,0,0,1,2,1,1,1,1
+JPMML-SkLearn,sklearn_pandas,DataFrameMapper,28,217,5,23,5,52,5,17,0,8
+JPMML-SkLearn,sklearn_pandas,DataFrameMapper.new CastFunction() {...},12,4,0,0,1,1,1,1,1,1
+JPMML-SkLearn,sklearn_pandas,DataFrameMapper.new CastFunction() {...},12,4,0,0,1,1,1,1,1,1
+JPMML-SkLearn,sklearn.decomposition,PCA,15,259,8,10,2,44,7,12,0,10
+JPMML-SkLearn,sklearn.decomposition,IncrementalPCA,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.linear_model.stochastic_gradient,LossFunction,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.linear_model.stochastic_gradient,Hinge,0,19,0,0,0,5,0,3,0,3
+JPMML-SkLearn,sklearn.linear_model.stochastic_gradient,SGDRegressor,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.linear_model.stochastic_gradient,Log,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.linear_model.stochastic_gradient,ModifiedHuber,5,0,0,0,2,0,1,0,1,0
+JPMML-SkLearn,sklearn.linear_model.stochastic_gradient,SquaredHinge,19,0,0,0,5,0,3,0,3,0
+JPMML-SkLearn,sklearn.linear_model.stochastic_gradient,SGDClassifier,11,25,1,3,2,8,2,4,1,3
+JPMML-SkLearn,sklearn.ensemble.iforest,IsolationForest.new OutlierTransformation() {...},0,23,0,0,0,2,0,2,0,2
+JPMML-SkLearn,sklearn.ensemble.iforest,IsolationForest.new AbstractTransformation() {...},0,50,0,0,0,3,0,3,0,3
+JPMML-SkLearn,sklearn.ensemble.iforest,IsolationForest.new AbstractTransformation() {...},2,39,1,1,0,5,1,3,0,3
+JPMML-SkLearn,sklearn.ensemble.iforest,IsolationForest.new AbstractVisitor() {...},2,73,2,6,0,14,2,4,0,2
+JPMML-SkLearn,sklearn.ensemble.iforest,IsolationForest,22,169,4,6,3,31,4,9,1,7
+JPMML-SkLearn,sklearn.neural_network,BaseMultilayerPerceptronUtil.new Object() {...},2,17,0,0,0,1,0,1,0,1
+JPMML-SkLearn,sklearn.neural_network,MLPRegressor,0,44,0,0,0,12,0,6,0,6
+JPMML-SkLearn,sklearn.neural_network,MLPClassifier,0,50,0,0,0,13,0,6,0,6
+JPMML-SkLearn,sklearn.neural_network,BaseMultilayerPerceptronUtil,34,359,16,20,7,74,15,14,1,6
+JPMML-SkLearn,scipy.sparse,CSRMatrixUtil,147,0,12,0,29,0,10,0,4,0
+JPMML-SkLearn,scipy.sparse,CSRMatrix,24,9,0,0,5,3,5,2,5,2
+JPMML-SkLearn,sklearn.preprocessing,Binarizer,0,65,0,2,0,12,0,4,0,3
+JPMML-SkLearn,sklearn.preprocessing,LabelEncoder,0,168,1,5,0,30,1,7,0,5
+JPMML-SkLearn,sklearn.preprocessing,RobustScaler,18,193,8,18,4,36,8,14,1,8
+JPMML-SkLearn,sklearn.preprocessing,ImputerUtil,25,99,3,7,5,18,4,3,1,1
+JPMML-SkLearn,sklearn.preprocessing,MinMaxScaler,0,143,2,8,0,27,2,9,0,6
+JPMML-SkLearn,sklearn.preprocessing,PolynomialFeatures.new Function() {...},0,58,0,4,0,11,0,4,0,2
+JPMML-SkLearn,sklearn.preprocessing,StandardScaler,27,202,10,20,6,38,9,15,1,8
+JPMML-SkLearn,sklearn.preprocessing,ImputerUtil.new Object() {...},3,23,0,0,0,1,0,1,0,1
+JPMML-SkLearn,sklearn.preprocessing,ImputerUtil.new Feature() {...},10,0,0,0,2,0,2,0,2,0
+JPMML-SkLearn,sklearn.preprocessing,OneHotEncoder,12,142,2,6,4,32,2,9,0,7
+JPMML-SkLearn,sklearn.preprocessing,Imputer,26,108,8,10,5,21,9,10,2,6
+JPMML-SkLearn,sklearn.preprocessing,FunctionTransformer,210,256,72,25,8,30,52,18,0,5
+JPMML-SkLearn,sklearn.preprocessing,LabelBinarizer,4,208,2,12,1,37,2,13,0,8
+JPMML-SkLearn,sklearn.preprocessing,PolynomialFeatures,0,387,0,36,0,80,0,29,0,11
+JPMML-SkLearn,sklearn.preprocessing,MaxAbsScaler,0,101,0,4,0,20,0,7,0,5
+JPMML-SkLearn,sklearn.feature_selection,SelectFromModel,127,5,4,0,23,2,6,1,4,1
+JPMML-SkLearn,sklearn.feature_selection,SelectKBest,4,107,2,6,2,23,2,8,0,6
+JPMML-SkLearn,sklearn.feature_selection,SelectKBest.Entry,0,29,0,0,0,11,0,6,0,6
+JPMML-SkLearn,sklearn.feature_selection,PySelector,35,5,0,0,4,2,3,1,3,1
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,LogOddsEstimator,0,16,0,0,0,4,0,3,0,3
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,MeanEstimator,0,15,0,0,0,4,0,3,0,3
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,QuantileEstimator,15,0,0,0,4,0,3,0,3,0
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,GradientBoostingClassifier.new GradientBoostingClassifier.GradientBoostingClassifierProxy() {...},0,14,0,0,0,2,0,2,0,2
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,ExponentialLoss,0,11,0,0,0,3,0,2,0,2
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,PriorProbabilityEstimator,0,16,0,0,0,4,0,3,0,3
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,GradientBoostingUtil,3,30,0,0,2,6,1,1,1,1
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,GradientBoostingClassifier,12,190,2,6,3,30,3,9,1,7
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,ZeroEstimator,11,0,0,0,4,0,3,0,3,0
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,BinomialDeviance,11,0,0,0,3,0,2,0,2,0
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,LossFunction,0,11,0,0,0,3,0,2,0,2
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,GradientBoostingRegressor,8,39,1,1,2,9,2,6,1,6
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,GradientBoostingClassifier.GradientBoostingClassifierProxy,0,9,0,0,0,2,0,2,0,2
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,MultinomialDeviance,0,9,0,0,0,3,0,2,0,2
+JPMML-SkLearn,sklearn.ensemble.gradient_boosting,ScaledLogOddsEstimator,0,5,0,0,0,2,0,1,0,1
+JPMML-SkLearn,sklearn.ensemble.weight_boosting,AdaBoostRegressor,0,68,0,2,0,17,0,5,0,4

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NumpyArrayWrapper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">joblib</a> &gt; <span class="el_source">NumpyArrayWrapper.java</span></div><h1>NumpyArrayWrapper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package joblib;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import numpy.DType;
+import numpy.core.NDArray;
+import numpy.core.NDArrayUtil;
+import org.jpmml.sklearn.PyClassDict;
+
+public class NumpyArrayWrapper extends PyClassDict {
+
+	public NumpyArrayWrapper(String module, String name){
+<span class="fc" id="L32">		super(module, name);</span>
+<span class="fc" id="L33">	}</span>
+
+	public NDArray toArray(InputStream is) throws IOException {
+<span class="fc" id="L36">		DType dtype = getDType();</span>
+<span class="fc" id="L37">		Object[] shape = getShape();</span>
+<span class="fc" id="L38">		String order = getOrder();</span>
+
+<span class="fc" id="L40">		Object descr = dtype.toDescr();</span>
+<span class="fc" id="L41">		Boolean fortranOrder = parseOrder(order);</span>
+
+<span class="fc" id="L43">		Object data = NDArrayUtil.parseData(is, descr, shape);</span>
+
+<span class="fc" id="L45">		NDArray array = new NDArray();</span>
+<span class="fc" id="L46">		array.__setstate__(new Object[]{null, shape, descr, fortranOrder, data});</span>
+
+<span class="fc" id="L48">		return array;</span>
+	}
+
+	public DType getDType(){
+<span class="fc" id="L52">		return (DType)get(&quot;dtype&quot;);</span>
+	}
+
+	public Object[] getShape(){
+<span class="fc" id="L56">		return (Object[])get(&quot;shape&quot;);</span>
+	}
+
+	public String getOrder(){
+<span class="fc" id="L60">		return (String)get(&quot;order&quot;);</span>
+	}
+
+	static
+	private Boolean parseOrder(String order){
+
+<span class="pc bpc" id="L66" title="4 of 10 branches missed.">		switch(order){</span>
+			case &quot;C&quot;:
+<span class="fc" id="L68">				return Boolean.FALSE;</span>
+			case &quot;F&quot;:
+<span class="fc" id="L70">				return Boolean.TRUE;</span>
+			default:
+<span class="nc" id="L72">				throw new IllegalArgumentException(order);</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Binarizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.preprocessing</a> &gt; <span class="el_source">Binarizer.java</span></div><h1>Binarizer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.preprocessing;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.dmg.pmml.Apply;
+import org.dmg.pmml.DerivedField;
+import org.jpmml.converter.ContinuousFeature;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.PMMLUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.Transformer;
+
+public class Binarizer extends Transformer {
+
+	public Binarizer(String module, String name){
+<span class="fc" id="L35">		super(module, name);</span>
+<span class="fc" id="L36">	}</span>
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L40">		Number threshold = getThreshold();</span>
+
+<span class="fc" id="L42">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L44" title="All 2 branches covered.">		for(int i = 0; i &lt; features.size(); i++){</span>
+<span class="fc" id="L45">			Feature feature = features.get(i);</span>
+
+<span class="fc" id="L47">			ContinuousFeature continuousFeature = feature.toContinuousFeature();</span>
+
+			// &quot;($name &lt;= threshold) ? 0 : 1&quot;
+<span class="fc" id="L50">			Apply apply = PMMLUtil.createApply(&quot;threshold&quot;, continuousFeature.ref(), PMMLUtil.createConstant(threshold));</span>
+
+<span class="fc" id="L52">			DerivedField derivedField = encoder.createDerivedField(createName(continuousFeature), apply);</span>
+
+<span class="fc" id="L54">			result.add(new ContinuousFeature(encoder, derivedField));</span>
+		}
+
+<span class="fc" id="L57">		return result;</span>
+	}
+
+	public Number getThreshold(){
+<span class="fc" id="L61">		return (Number)get(&quot;threshold&quot;);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

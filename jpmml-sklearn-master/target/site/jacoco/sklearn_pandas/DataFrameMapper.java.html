@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataFrameMapper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn_pandas</a> &gt; <span class="el_source">DataFrameMapper.java</span></div><h1>DataFrameMapper.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn_pandas;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import com.google.common.collect.Lists;
+import org.dmg.pmml.DataField;
+import org.dmg.pmml.FieldName;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.WildcardFeature;
+import org.jpmml.sklearn.CastFunction;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.HasArray;
+import org.jpmml.sklearn.SkLearnEncoder;
+import org.jpmml.sklearn.TupleUtil;
+import sklearn.Initializer;
+import sklearn.Transformer;
+
+public class DataFrameMapper extends Initializer {
+
+	public DataFrameMapper(String module, String name){
+<span class="fc" id="L42">		super(module, name);</span>
+<span class="fc" id="L43">	}</span>
+
+	@Override
+	public List&lt;Feature&gt; initializeFeatures(SkLearnEncoder encoder){
+<span class="fc" id="L47">		Object _default = getDefault();</span>
+<span class="fc" id="L48">		List&lt;Object[]&gt; rows = getFeatures();</span>
+
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">		if(!(Boolean.FALSE).equals(_default)){</span>
+<span class="nc" id="L51">			throw new IllegalArgumentException();</span>
+		}
+
+<span class="fc" id="L54">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">		for(Object[] row : rows){</span>
+<span class="fc" id="L57">			List&lt;Feature&gt; rowFeatures = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L59">			List&lt;String&gt; columns = getColumnList(row);</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">			for(String column : columns){</span>
+<span class="fc" id="L61">				FieldName name = FieldName.create(column);</span>
+
+<span class="fc" id="L63">				DataField dataField = encoder.getDataField(name);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">				if(dataField == null){</span>
+<span class="fc" id="L65">					dataField = encoder.createDataField(name);</span>
+				}
+
+<span class="fc" id="L68">				rowFeatures.add(new WildcardFeature(encoder, dataField));</span>
+<span class="fc" id="L69">			}</span>
+
+<span class="fc" id="L71">			List&lt;Transformer&gt; transformers = getTransformerList(row);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">			for(Transformer transformer : transformers){</span>
+<span class="fc" id="L73">				encoder.updateFeatures(rowFeatures, transformer);</span>
+
+<span class="fc" id="L75">				rowFeatures = transformer.encodeFeatures(rowFeatures, encoder);</span>
+<span class="fc" id="L76">			}</span>
+
+<span class="fc bfc" id="L78" title="All 2 branches covered.">			if(row.length &gt; 2){</span>
+<span class="fc" id="L79">				Map&lt;String, ?&gt; options = (Map)row[2];</span>
+
+<span class="fc" id="L81">				String alias = (String)options.get(&quot;alias&quot;);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">				if(alias != null){</span>
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">					for(int i = 0; i &lt; rowFeatures.size(); i++){</span>
+<span class="fc" id="L85">						Feature rowFeature = rowFeatures.get(i);</span>
+
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">						encoder.renameField(rowFeature.getName(), rowFeatures.size() &gt; 1 ? FieldName.create(alias + &quot;_&quot; + i) : FieldName.create(alias));</span>
+					}
+				}
+			}
+
+<span class="fc" id="L92">			result.addAll(rowFeatures);</span>
+<span class="fc" id="L93">		}</span>
+
+<span class="fc" id="L95">		return result;</span>
+	}
+
+	public Object getDefault(){
+<span class="fc" id="L99">		return get(&quot;default&quot;);</span>
+	}
+
+	public DataFrameMapper setDefault(Object _default){
+<span class="fc" id="L103">		put(&quot;default&quot;, _default);</span>
+
+<span class="fc" id="L105">		return this;</span>
+	}
+
+	public List&lt;Object[]&gt; getFeatures(){
+<span class="fc" id="L109">		return getTupleList(&quot;features&quot;);</span>
+	}
+
+	public DataFrameMapper setFeatures(List&lt;Object[]&gt; features){
+<span class="fc" id="L113">		put(&quot;features&quot;, features);</span>
+
+<span class="fc" id="L115">		return this;</span>
+	}
+
+	static
+	private List&lt;String&gt; getColumnList(Object[] feature){
+<span class="fc" id="L120">		Object key = feature[0];</span>
+
+<span class="fc bfc" id="L122" title="All 2 branches covered.">		if(key instanceof HasArray){</span>
+<span class="fc" id="L123">			HasArray hasArray = (HasArray)key;</span>
+
+<span class="fc" id="L125">			key = hasArray.getArrayContent();</span>
+		}
+
+<span class="fc" id="L128">		CastFunction&lt;String&gt; castFunction = new CastFunction&lt;String&gt;(String.class){</span>
+
+			@Override
+			protected String formatMessage(Object object){
+<span class="nc" id="L132">				return &quot;The key object (&quot; + ClassDictUtil.formatClass(object) + &quot;) is not a String&quot;;</span>
+			}
+		};
+
+<span class="fc bfc" id="L136" title="All 2 branches covered.">		if(key instanceof List){</span>
+<span class="fc" id="L137">			return Lists.transform((List)key, castFunction);</span>
+		}
+
+<span class="fc" id="L140">		return Collections.singletonList(castFunction.apply(key));</span>
+	}
+
+	static
+	private List&lt;Transformer&gt; getTransformerList(Object[] feature){
+<span class="fc" id="L145">		Object value = feature[1];</span>
+
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">		if(value == null){</span>
+<span class="nc" id="L148">			return Collections.emptyList();</span>
+		} // End if
+
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">		if(value instanceof TransformerPipeline){</span>
+<span class="nc" id="L152">			TransformerPipeline transformerPipeline = (TransformerPipeline)value;</span>
+
+<span class="nc" id="L154">			List&lt;Object[]&gt; steps = transformerPipeline.getSteps();</span>
+
+<span class="nc" id="L156">			value = TupleUtil.extractElementList(steps, 1);</span>
+		}
+
+<span class="fc" id="L159">		CastFunction&lt;Transformer&gt; castFunction = new CastFunction&lt;Transformer&gt;(Transformer.class){</span>
+
+			@Override
+			protected String formatMessage(Object object){
+<span class="nc" id="L163">				return &quot;The value object (&quot; + ClassDictUtil.formatClass(object) + &quot;) is not a supported Transformer&quot;;</span>
+			}
+		};
+
+<span class="fc bfc" id="L167" title="All 2 branches covered.">		if(value instanceof List){</span>
+<span class="fc" id="L168">			return Lists.transform((List)value, castFunction);</span>
+		}
+
+<span class="fc" id="L171">		return Collections.singletonList(castFunction.apply(value));</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XMLUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">org.jpmml.sklearn</a> &gt; <span class="el_source">XMLUtil.java</span></div><h1>XMLUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.jpmml.sklearn;
+
+public class XMLUtil {
+
+<span class="nc" id="L23">	private XMLUtil(){</span>
+<span class="nc" id="L24">	}</span>
+
+	static
+	public String createTagName(String string){
+<span class="fc" id="L28">		StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc bfc" id="L30" title="All 2 branches covered.">		for(int i = 0; i &lt; string.length(); i++){</span>
+<span class="fc" id="L31">			char c = string.charAt(i);</span>
+
+<span class="fc bfc" id="L33" title="All 2 branches covered.">			boolean valid = (i == 0 ? isTagNameStartChar(c) : isTagNameContinuationChar(c));</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">			if(valid){</span>
+<span class="fc" id="L35">				sb.append(c);</span>
+			} else
+
+			{
+<span class="nc bnc" id="L39" title="All 2 branches missed.">				if(c == ' '){</span>
+<span class="nc" id="L40">					sb.append(&quot;_x0020_&quot;);</span>
+				} else
+
+				{
+<span class="nc" id="L44">					sb.append('_');</span>
+<span class="nc" id="L45">					sb.append('x');</span>
+
+<span class="nc" id="L47">					String hex = Integer.toHexString(c);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">					for(int j = 0; j &lt; (4 - hex.length()); j++){</span>
+<span class="nc" id="L49">						sb.append('0');</span>
+					}
+
+<span class="nc" id="L52">					sb.append(hex);</span>
+<span class="nc" id="L53">					sb.append('_');</span>
+				}
+			}
+		}
+
+<span class="fc" id="L58">		return sb.toString();</span>
+	}
+
+	static
+	private boolean isTagNameStartChar(char c){
+
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">		switch(c){</span>
+			case '_':
+<span class="nc" id="L66">				return true;</span>
+			default:
+<span class="fc" id="L68">				return Character.isLetter(c);</span>
+		}
+	}
+
+	static
+	private boolean isTagNameContinuationChar(char c){
+
+<span class="fc bfc" id="L75" title="All 2 branches covered.">		switch(c){</span>
+			case '-':
+			case '.':
+			case '_':
+<span class="fc" id="L79">				return true;</span>
+			default:
+<span class="fc" id="L81">				return Character.isLetterOrDigit(c);</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

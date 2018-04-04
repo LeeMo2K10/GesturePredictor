@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LabelBinarizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.preprocessing</a> &gt; <span class="el_source">LabelBinarizer.java</span></div><h1>LabelBinarizer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.preprocessing;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.dmg.pmml.Apply;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.DerivedField;
+import org.dmg.pmml.OpType;
+import org.jpmml.converter.BinaryFeature;
+import org.jpmml.converter.CategoricalFeature;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.PMMLUtil;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.Transformer;
+import sklearn.TypeUtil;
+
+public class LabelBinarizer extends Transformer {
+
+	public LabelBinarizer(String module, String name){
+<span class="fc" id="L41">		super(module, name);</span>
+<span class="fc" id="L42">	}</span>
+
+	@Override
+	public OpType getOpType(){
+<span class="fc" id="L46">		return OpType.CATEGORICAL;</span>
+	}
+
+	@Override
+	public DataType getDataType(){
+<span class="fc" id="L51">		List&lt;?&gt; classes = getClasses();</span>
+
+<span class="fc" id="L53">		return TypeUtil.getDataType(classes, DataType.STRING);</span>
+	}
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L58">		List&lt;?&gt; classes = getClasses();</span>
+
+<span class="fc" id="L60">		Number negLabel = getNegLabel();</span>
+<span class="fc" id="L61">		Number posLabel = getPosLabel();</span>
+
+<span class="fc" id="L63">		ClassDictUtil.checkSize(1, features);</span>
+
+<span class="fc" id="L65">		Feature feature = features.get(0);</span>
+
+<span class="fc" id="L67">		List&lt;String&gt; categories = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">		for(int i = 0; i &lt; classes.size(); i++){</span>
+<span class="fc" id="L70">			Object value = classes.get(i);</span>
+
+<span class="fc" id="L72">			String category = ValueUtil.formatValue(value);</span>
+
+<span class="fc" id="L74">			categories.add(category);</span>
+		}
+
+<span class="fc" id="L77">		List&lt;String&gt; labelCategories = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L78">		labelCategories.add(ValueUtil.formatValue(negLabel));</span>
+<span class="fc" id="L79">		labelCategories.add(ValueUtil.formatValue(posLabel));</span>
+
+<span class="fc" id="L81">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L83">		classes = prepareClasses(classes);</span>
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">		for(int i = 0; i &lt; classes.size(); i++){</span>
+<span class="fc" id="L86">			Object value = classes.get(i);</span>
+
+<span class="fc" id="L88">			String category = ValueUtil.formatValue(value);</span>
+
+<span class="pc bpc" id="L90" title="1 of 4 branches missed.">			if(ValueUtil.isZero(negLabel) &amp;&amp; ValueUtil.isOne(posLabel)){</span>
+<span class="fc" id="L91">				result.add(new BinaryFeature(encoder, feature.getName(), DataType.STRING, category));</span>
+			} else
+
+			{
+				// &quot;($name == value) ? pos_label : neg_label&quot;
+<span class="fc" id="L96">				Apply apply = PMMLUtil.createApply(&quot;if&quot;, PMMLUtil.createApply(&quot;equal&quot;, feature.ref(), PMMLUtil.createConstant(value)), PMMLUtil.createConstant(posLabel), PMMLUtil.createConstant(negLabel));</span>
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">				DerivedField derivedField = encoder.createDerivedField((classes.size() &gt; 1 ? createName(feature, i) : createName(feature)), apply);</span>
+
+<span class="fc" id="L100">				result.add(new CategoricalFeature(encoder, derivedField, labelCategories));</span>
+			}
+		}
+
+<span class="fc" id="L104">		encoder.toCategorical(feature.getName(), categories);</span>
+
+<span class="fc" id="L106">		return result;</span>
+	}
+
+	protected List&lt;?&gt; prepareClasses(List&lt;?&gt; classes){
+
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">		if(classes.size() &lt; 2){</span>
+<span class="nc" id="L112">			throw new IllegalArgumentException();</span>
+		} else
+
+		// [negValue, posValue] -&gt; [posValue]
+<span class="fc bfc" id="L116" title="All 2 branches covered.">		if(classes.size() == 2){</span>
+<span class="fc" id="L117">			classes = classes.subList(1, 2);</span>
+		}
+
+<span class="fc" id="L120">		return classes;</span>
+	}
+
+	public List&lt;?&gt; getClasses(){
+<span class="fc" id="L124">		return getArray(&quot;classes_&quot;);</span>
+	}
+
+	public Number getPosLabel(){
+<span class="fc" id="L128">		return (Number)get(&quot;pos_label&quot;);</span>
+	}
+
+	public Number getNegLabel(){
+<span class="fc" id="L132">		return (Number)get(&quot;neg_label&quot;);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

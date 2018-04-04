@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OneHotEncoder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.preprocessing</a> &gt; <span class="el_source">OneHotEncoder.java</span></div><h1>OneHotEncoder.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.preprocessing;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Range;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.OpType;
+import org.jpmml.converter.BinaryFeature;
+import org.jpmml.converter.CategoricalFeature;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.converter.WildcardFeature;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.Transformer;
+import sklearn.TypeUtil;
+
+public class OneHotEncoder extends Transformer {
+
+	public OneHotEncoder(String module, String name){
+<span class="fc" id="L42">		super(module, name);</span>
+<span class="fc" id="L43">	}</span>
+
+	@Override
+	public OpType getOpType(){
+<span class="fc" id="L47">		return OpType.CATEGORICAL;</span>
+	}
+
+	@Override
+	public DataType getDataType(){
+<span class="fc" id="L52">		List&lt;? extends Number&gt; values = getValues();</span>
+
+<span class="fc" id="L54">		return TypeUtil.getDataType(values, DataType.INTEGER);</span>
+	}
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L59">		List&lt;? extends Number&gt; values = getValues();</span>
+
+<span class="fc" id="L61">		ClassDictUtil.checkSize(1, features);</span>
+
+<span class="fc" id="L63">		Feature feature = features.get(0);</span>
+
+<span class="fc" id="L65">		List&lt;String&gt; categories = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L67">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">		for(int i = 0; i &lt; values.size(); i++){</span>
+<span class="fc" id="L70">			int value = ValueUtil.asInt(values.get(i));</span>
+
+			String category;
+
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">			if(feature instanceof CategoricalFeature){</span>
+<span class="nc" id="L75">				CategoricalFeature categoricalFeature = (CategoricalFeature)feature;</span>
+
+<span class="nc" id="L77">				category = categoricalFeature.getValue(value);</span>
+<span class="nc" id="L78">			} else</span>
+
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">			if(feature instanceof WildcardFeature){</span>
+<span class="fc" id="L81">				WildcardFeature wildcardFeature = (WildcardFeature)feature;</span>
+
+<span class="fc" id="L83">				category = ValueUtil.formatValue((Integer)value);</span>
+<span class="fc" id="L84">			} else</span>
+
+			{
+<span class="nc" id="L87">				throw new IllegalArgumentException();</span>
+			}
+
+<span class="fc" id="L90">			categories.add(category);</span>
+
+<span class="fc" id="L92">			result.add(new BinaryFeature(encoder, feature.getName(), DataType.STRING, category));</span>
+		}
+
+<span class="fc" id="L95">		encoder.toCategorical(feature.getName(), categories);</span>
+
+<span class="fc" id="L97">		return result;</span>
+	}
+
+	public List&lt;? extends Number&gt; getValues(){
+<span class="fc" id="L101">		List&lt;Integer&gt; featureSizes = getFeatureSizes();</span>
+
+<span class="fc" id="L103">		ClassDictUtil.checkSize(1, featureSizes);</span>
+
+<span class="fc" id="L105">		Object numberOfValues = get(&quot;n_values&quot;);</span>
+
+<span class="fc bfc" id="L107" title="All 2 branches covered.">		if((&quot;auto&quot;).equals(numberOfValues)){</span>
+<span class="fc" id="L108">			return getActiveFeatures();</span>
+		}
+
+<span class="fc" id="L111">		Integer featureSize = featureSizes.get(0);</span>
+
+<span class="fc" id="L113">		List&lt;Integer&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L114">		result.addAll(ContiguousSet.create(Range.closedOpen(0, featureSize), DiscreteDomain.integers()));</span>
+
+<span class="fc" id="L116">		return result;</span>
+	}
+
+	public List&lt;? extends Number&gt; getActiveFeatures(){
+<span class="fc" id="L120">		return getArray(&quot;active_features_&quot;, Number.class);</span>
+	}
+
+	public List&lt;Integer&gt; getFeatureSizes(){
+<span class="fc" id="L124">		return ValueUtil.asIntegers(getArray(&quot;n_values_&quot;, Number.class));</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

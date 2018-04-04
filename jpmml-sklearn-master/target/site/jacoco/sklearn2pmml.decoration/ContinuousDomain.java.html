@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContinuousDomain.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn2pmml.decoration</a> &gt; <span class="el_source">ContinuousDomain.java</span></div><h1>ContinuousDomain.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn2pmml.decoration;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.dmg.pmml.Interval;
+import org.dmg.pmml.NumericInfo;
+import org.dmg.pmml.OpType;
+import org.dmg.pmml.UnivariateStats;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.ValidValueDecorator;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.converter.WildcardFeature;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+
+public class ContinuousDomain extends Domain {
+
+	public ContinuousDomain(String module, String name){
+<span class="fc" id="L39">		super(module, name);</span>
+<span class="fc" id="L40">	}</span>
+
+	@Override
+	public OpType getOpType(){
+<span class="fc" id="L44">		return OpType.CONTINUOUS;</span>
+	}
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L49">		Boolean withData = getWithData();</span>
+<span class="fc" id="L50">		Boolean withStatistics = getWithStatistics();</span>
+
+<span class="fc" id="L52">		List&lt;? extends Number&gt; dataMin = null;</span>
+<span class="fc" id="L53">		List&lt;? extends Number&gt; dataMax = null;</span>
+
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">		if(withData){</span>
+<span class="fc" id="L56">			dataMin = getDataMin();</span>
+<span class="fc" id="L57">			dataMax = getDataMax();</span>
+
+<span class="fc" id="L59">			ClassDictUtil.checkSize(features, dataMin, dataMax);</span>
+		}
+
+<span class="fc" id="L62">		List&lt;Feature&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">		for(int i = 0; i &lt; features.size(); i++){</span>
+<span class="fc" id="L65">			Feature feature = features.get(i);</span>
+
+<span class="fc" id="L67">			WildcardFeature wildcardFeature = (WildcardFeature)feature;</span>
+
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">			if(withData){</span>
+<span class="fc" id="L70">				Interval interval = new Interval(Interval.Closure.CLOSED_CLOSED)</span>
+<span class="fc" id="L71">					.setLeftMargin(ValueUtil.asDouble(dataMin.get(i)))</span>
+<span class="fc" id="L72">					.setRightMargin(ValueUtil.asDouble(dataMax.get(i)));</span>
+
+<span class="fc" id="L74">				ValidValueDecorator validValueDecorator = new ValidValueDecorator()</span>
+<span class="fc" id="L75">					.addIntervals(interval);</span>
+
+<span class="fc" id="L77">				feature = wildcardFeature.toContinuousFeature();</span>
+
+<span class="fc" id="L79">				encoder.addDecorator(wildcardFeature.getName(), validValueDecorator);</span>
+			} // End if
+
+<span class="fc bfc" id="L82" title="All 2 branches covered.">			if(withStatistics){</span>
+<span class="fc" id="L83">				Map&lt;String, ?&gt; counts = extractMap(getCounts(), i);</span>
+<span class="fc" id="L84">				Map&lt;String, ?&gt; numericInfo = extractMap(getNumericInfo(), i);</span>
+
+<span class="fc" id="L86">				UnivariateStats univariateStats = new UnivariateStats()</span>
+<span class="fc" id="L87">					.setField(wildcardFeature.getName())</span>
+<span class="fc" id="L88">					.setCounts(createCounts(counts))</span>
+<span class="fc" id="L89">					.setNumericInfo(createNumericInfo(numericInfo));</span>
+
+<span class="fc" id="L91">				encoder.putUnivariateStats(univariateStats);</span>
+			}
+
+<span class="fc" id="L94">			result.add(feature);</span>
+		}
+
+<span class="fc" id="L97">		return super.encodeFeatures(result, encoder);</span>
+	}
+
+	public List&lt;? extends Number&gt; getDataMin(){
+<span class="fc" id="L101">		return getArray(&quot;data_min_&quot;, Number.class);</span>
+	}
+
+	public List&lt;? extends Number&gt; getDataMax(){
+<span class="fc" id="L105">		return getArray(&quot;data_max_&quot;, Number.class);</span>
+	}
+
+	public Map&lt;String, ?&gt; getNumericInfo(){
+<span class="fc" id="L109">		return get(&quot;numeric_info_&quot;, Map.class);</span>
+	}
+
+	static
+	public NumericInfo createNumericInfo(Map&lt;String, ?&gt; values){
+<span class="fc" id="L114">		NumericInfo numericInfo = new NumericInfo()</span>
+<span class="fc" id="L115">			.setMinimum(selectValue(values, &quot;minimum&quot;))</span>
+<span class="fc" id="L116">			.setMaximum(selectValue(values, &quot;maximum&quot;))</span>
+<span class="fc" id="L117">			.setMean(selectValue(values, &quot;mean&quot;))</span>
+<span class="fc" id="L118">			.setStandardDeviation(selectValue(values, &quot;standardDeviation&quot;))</span>
+<span class="fc" id="L119">			.setMedian(selectValue(values, &quot;median&quot;))</span>
+<span class="fc" id="L120">			.setInterQuartileRange(selectValue(values, &quot;interQuartileRange&quot;));</span>
+
+<span class="fc" id="L122">		return numericInfo;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

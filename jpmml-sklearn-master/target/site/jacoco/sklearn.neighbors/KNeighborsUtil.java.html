@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KNeighborsUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.neighbors</a> &gt; <span class="el_source">KNeighborsUtil.java</span></div><h1>KNeighborsUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.neighbors;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+
+import org.dmg.pmml.CityBlock;
+import org.dmg.pmml.CompareFunction;
+import org.dmg.pmml.ComparisonMeasure;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.Euclidean;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.InlineTable;
+import org.dmg.pmml.Measure;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.Minkowski;
+import org.dmg.pmml.OpType;
+import org.dmg.pmml.Output;
+import org.dmg.pmml.OutputField;
+import org.dmg.pmml.ResultFeature;
+import org.dmg.pmml.Row;
+import org.dmg.pmml.nearest_neighbor.InstanceField;
+import org.dmg.pmml.nearest_neighbor.InstanceFields;
+import org.dmg.pmml.nearest_neighbor.KNNInput;
+import org.dmg.pmml.nearest_neighbor.KNNInputs;
+import org.dmg.pmml.nearest_neighbor.NearestNeighborModel;
+import org.dmg.pmml.nearest_neighbor.TrainingInstances;
+import org.jpmml.converter.CMatrixUtil;
+import org.jpmml.converter.ContinuousFeature;
+import org.jpmml.converter.DOMUtil;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.Label;
+import org.jpmml.converter.ModelUtil;
+import org.jpmml.converter.Schema;
+import org.jpmml.sklearn.ClassDictUtil;
+import sklearn.Estimator;
+
+public class KNeighborsUtil {
+
+<span class="nc" id="L59">	private KNeighborsUtil(){</span>
+<span class="nc" id="L60">	}</span>
+
+	static
+	public &lt;E extends Estimator &amp; HasNeighbors &amp; HasTrainingData&gt; NearestNeighborModel encodeNeighbors(E estimator, MiningFunction miningFunction, int numberOfInstances, int numberOfFeatures, Schema schema){
+<span class="fc" id="L64">		List&lt;String&gt; keys = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L66">		InstanceFields instanceFields = new InstanceFields();</span>
+
+<span class="fc" id="L68">		KNNInputs knnInputs = new KNNInputs();</span>
+
+<span class="fc" id="L70">		Label label = schema.getLabel();</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">		if(label != null){</span>
+<span class="fc" id="L72">			InstanceField instanceField = new InstanceField(label.getName())</span>
+<span class="fc" id="L73">				.setColumn(&quot;y&quot;);</span>
+
+<span class="fc" id="L75">			instanceFields.addInstanceFields(instanceField);</span>
+
+<span class="fc" id="L77">			keys.add(instanceField.getColumn());</span>
+		}
+
+<span class="fc" id="L80">		List&lt;Feature&gt; features = schema.getFeatures();</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">		for(int i = 0; i &lt; features.size(); i++){</span>
+<span class="fc" id="L82">			Feature feature = features.get(i);</span>
+
+<span class="fc" id="L84">			ContinuousFeature continuousFeature = feature.toContinuousFeature(estimator.getDataType());</span>
+
+<span class="fc" id="L86">			FieldName name = continuousFeature.getName();</span>
+
+<span class="fc" id="L88">			InstanceField instanceField = new InstanceField(name)</span>
+<span class="fc" id="L89">				.setColumn(&quot;x&quot; + String.valueOf(i + 1));</span>
+
+<span class="fc" id="L91">			instanceFields.addInstanceFields(instanceField);</span>
+
+<span class="fc" id="L93">			keys.add(instanceField.getColumn());</span>
+
+<span class="fc" id="L95">			KNNInput knnInput = new KNNInput(name);</span>
+
+<span class="fc" id="L97">			knnInputs.addKNNInputs(knnInput);</span>
+		}
+
+<span class="fc" id="L100">		DocumentBuilder documentBuilder = DOMUtil.createDocumentBuilder();</span>
+
+<span class="fc" id="L102">		InlineTable inlineTable = new InlineTable();</span>
+
+<span class="fc" id="L104">		List&lt;?&gt; y = estimator.getY();</span>
+<span class="fc" id="L105">		List&lt;? extends Number&gt; fitX = estimator.getFitX();</span>
+
+<span class="fc" id="L107">		ClassDictUtil.checkSize(numberOfInstances, y);</span>
+
+<span class="fc bfc" id="L109" title="All 2 branches covered.">		for(int i = 0; i &lt; numberOfInstances; i++){</span>
+<span class="fc" id="L110">			List&lt;Object&gt; values = new ArrayList&lt;&gt;(1 + numberOfFeatures);</span>
+<span class="fc" id="L111">			values.add(y.get(i));</span>
+<span class="fc" id="L112">			values.addAll(CMatrixUtil.getRow(fitX, numberOfInstances, numberOfFeatures, i));</span>
+
+<span class="fc" id="L114">			Row row = DOMUtil.createRow(documentBuilder, keys, values);</span>
+
+<span class="fc" id="L116">			inlineTable.addRows(row);</span>
+		}
+
+<span class="fc" id="L119">		TrainingInstances trainingInstances = new TrainingInstances(instanceFields)</span>
+<span class="fc" id="L120">			.setInlineTable(inlineTable)</span>
+<span class="fc" id="L121">			.setTransformed(true);</span>
+
+<span class="fc" id="L123">		ComparisonMeasure comparisonMeasure = encodeComparisonMeasure(estimator.getMetric(), estimator.getP());</span>
+
+<span class="fc" id="L125">		String weights = estimator.getWeights();</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">		if(!(weights).equals(&quot;uniform&quot;)){</span>
+<span class="nc" id="L127">			throw new IllegalArgumentException(weights);</span>
+		}
+
+<span class="fc" id="L130">		int numberOfNeighbors = estimator.getNumberOfNeighbors();</span>
+
+<span class="fc" id="L132">		List&lt;OutputField&gt; outputFields = new ArrayList&lt;&gt;(numberOfNeighbors);</span>
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">		for(int i = 0; i &lt; numberOfNeighbors; i++){</span>
+<span class="fc" id="L135">			int rank = (i + 1);</span>
+
+<span class="fc" id="L137">			OutputField outputField = new OutputField(FieldName.create(&quot;neighbor(&quot; + rank + &quot;)&quot;), DataType.STRING)</span>
+<span class="fc" id="L138">				.setOpType(OpType.CATEGORICAL)</span>
+<span class="fc" id="L139">				.setResultFeature(ResultFeature.ENTITY_ID)</span>
+<span class="fc" id="L140">				.setRank(rank);</span>
+
+<span class="fc" id="L142">			outputFields.add(outputField);</span>
+		}
+
+<span class="fc" id="L145">		Output output = new Output(outputFields);</span>
+
+<span class="fc" id="L147">		NearestNeighborModel nearestNeighborModel = new NearestNeighborModel(MiningFunction.REGRESSION, numberOfNeighbors, ModelUtil.createMiningSchema(schema.getLabel()), trainingInstances, comparisonMeasure, knnInputs)</span>
+<span class="fc" id="L148">			.setOutput(output);</span>
+
+<span class="fc" id="L150">		return nearestNeighborModel;</span>
+	}
+
+	static
+	private ComparisonMeasure encodeComparisonMeasure(String metric, int p){
+
+<span class="pc bpc" id="L156" title="3 of 6 branches missed.">		switch(metric){</span>
+			case &quot;minkowski&quot;:
+				{
+					Measure measure;
+
+<span class="pc bpc" id="L161" title="2 of 3 branches missed.">					switch(p){</span>
+						case 1:
+<span class="nc" id="L163">							measure = new CityBlock();</span>
+<span class="nc" id="L164">							break;</span>
+						case 2:
+<span class="fc" id="L166">							measure = new Euclidean();</span>
+<span class="fc" id="L167">							break;</span>
+						default:
+<span class="nc" id="L169">							measure = new Minkowski(p);</span>
+							break;
+					}
+
+<span class="fc" id="L173">					ComparisonMeasure comparisonMeasure = new ComparisonMeasure(ComparisonMeasure.Kind.DISTANCE)</span>
+<span class="fc" id="L174">						.setCompareFunction(CompareFunction.ABS_DIFF)</span>
+<span class="fc" id="L175">						.setMeasure(measure);</span>
+
+<span class="fc" id="L177">					return comparisonMeasure;</span>
+				}
+			default:
+<span class="nc" id="L180">				throw new IllegalArgumentException(metric);</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

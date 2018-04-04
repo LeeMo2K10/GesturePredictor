@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KMeans.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.cluster</a> &gt; <span class="el_source">KMeans.java</span></div><h1>KMeans.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.cluster;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
+import org.dmg.pmml.CompareFunction;
+import org.dmg.pmml.ComparisonMeasure;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.SquaredEuclidean;
+import org.dmg.pmml.clustering.Cluster;
+import org.dmg.pmml.clustering.ClusteringModel;
+import org.jpmml.converter.CMatrixUtil;
+import org.jpmml.converter.ModelUtil;
+import org.jpmml.converter.PMMLUtil;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.converter.clustering.ClusteringModelUtil;
+import sklearn.Clusterer;
+
+public class KMeans extends Clusterer {
+
+	public KMeans(String module, String name){
+<span class="fc" id="L45">		super(module, name);</span>
+<span class="fc" id="L46">	}</span>
+
+	@Override
+	public int getNumberOfFeatures(){
+<span class="fc" id="L50">		int[] shape = getClusterCentersShape();</span>
+
+<span class="fc" id="L52">		return shape[1];</span>
+	}
+
+	@Override
+	public ClusteringModel encodeModel(Schema schema){
+<span class="fc" id="L57">		int[] shape = getClusterCentersShape();</span>
+
+<span class="fc" id="L59">		int numberOfClusters = shape[0];</span>
+<span class="fc" id="L60">		int numberOfFeatures = shape[1];</span>
+
+<span class="fc" id="L62">		List&lt;? extends Number&gt; clusterCenters = getClusterCenters();</span>
+<span class="fc" id="L63">		List&lt;Integer&gt; labels = getLabels();</span>
+
+<span class="fc" id="L65">		Multiset&lt;Integer&gt; labelCounts = HashMultiset.create();</span>
+
+<span class="fc bfc" id="L67" title="All 2 branches covered.">		if(labels != null){</span>
+<span class="fc" id="L68">			labelCounts.addAll(labels);</span>
+		}
+
+<span class="fc" id="L71">		List&lt;Cluster&gt; clusters = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">		for(int i = 0; i &lt; numberOfClusters; i++){</span>
+<span class="fc" id="L74">			Cluster cluster = new Cluster()</span>
+<span class="fc" id="L75">				.setId(String.valueOf(i))</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">				.setSize((labelCounts.size () &gt; 0 ? labelCounts.count(i) : null))</span>
+<span class="fc" id="L77">				.setArray(PMMLUtil.createRealArray(CMatrixUtil.getRow(clusterCenters, numberOfClusters, numberOfFeatures, i)));</span>
+
+<span class="fc" id="L79">			clusters.add(cluster);</span>
+		}
+
+<span class="fc" id="L82">		ComparisonMeasure comparisonMeasure = new ComparisonMeasure(ComparisonMeasure.Kind.DISTANCE)</span>
+<span class="fc" id="L83">			.setCompareFunction(CompareFunction.ABS_DIFF)</span>
+<span class="fc" id="L84">			.setMeasure(new SquaredEuclidean());</span>
+
+<span class="fc" id="L86">		ClusteringModel clusteringModel = new ClusteringModel(MiningFunction.CLUSTERING, ClusteringModel.ModelClass.CENTER_BASED, numberOfClusters, ModelUtil.createMiningSchema(schema.getLabel()), comparisonMeasure, ClusteringModelUtil.createClusteringFields(schema.getFeatures()), clusters)</span>
+<span class="fc" id="L87">			.setOutput(ClusteringModelUtil.createOutput(FieldName.create(&quot;Cluster&quot;), DataType.DOUBLE, clusters));</span>
+
+<span class="fc" id="L89">		return clusteringModel;</span>
+	}
+
+	public List&lt;? extends Number&gt; getClusterCenters(){
+<span class="fc" id="L93">		return getArray(&quot;cluster_centers_&quot;, Number.class);</span>
+	}
+
+	public int[] getClusterCentersShape(){
+<span class="fc" id="L97">		return getArrayShape(&quot;cluster_centers_&quot;, 2);</span>
+	}
+
+	public List&lt;Integer&gt; getLabels(){
+<span class="fc" id="L101">		return ValueUtil.asIntegers(getArray(&quot;labels_&quot;, Number.class));</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

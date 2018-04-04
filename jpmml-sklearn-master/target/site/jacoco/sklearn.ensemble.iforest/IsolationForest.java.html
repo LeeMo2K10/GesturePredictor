@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IsolationForest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.ensemble.iforest</a> &gt; <span class="el_source">IsolationForest.java</span></div><h1>IsolationForest.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.ensemble.iforest;
+
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+
+import numpy.core.Scalar;
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.Expression;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.FieldRef;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.OpType;
+import org.dmg.pmml.PMMLObject;
+import org.dmg.pmml.Visitor;
+import org.dmg.pmml.VisitorAction;
+import org.dmg.pmml.mining.MiningModel;
+import org.dmg.pmml.mining.Segmentation.MultipleModelMethod;
+import org.dmg.pmml.tree.Node;
+import org.dmg.pmml.tree.TreeModel;
+import org.jpmml.converter.AbstractTransformation;
+import org.jpmml.converter.ModelUtil;
+import org.jpmml.converter.OutlierTransformation;
+import org.jpmml.converter.PMMLUtil;
+import org.jpmml.converter.PredicateManager;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.Transformation;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.converter.mining.MiningModelUtil;
+import org.jpmml.model.visitors.AbstractVisitor;
+import org.jpmml.sklearn.SkLearnUtil;
+import sklearn.Regressor;
+import sklearn.ensemble.EnsembleRegressor;
+import sklearn.tree.ExtraTreeRegressor;
+import sklearn.tree.HasTreeOptions;
+import sklearn.tree.Tree;
+import sklearn.tree.TreeModelUtil;
+
+public class IsolationForest extends EnsembleRegressor implements HasTreeOptions {
+
+	public IsolationForest(String module, String name){
+<span class="fc" id="L60">		super(module, name);</span>
+<span class="fc" id="L61">	}</span>
+
+	@Override
+	public boolean isSupervised(){
+<span class="fc" id="L65">		return false;</span>
+	}
+
+	@Override
+	public MiningModel encodeModel(Schema schema){
+<span class="fc" id="L70">		String sklearnVersion = getSkLearnVersion();</span>
+<span class="fc" id="L71">		List&lt;? extends Regressor&gt; estimators = getEstimators();</span>
+
+		// See https://github.com/scikit-learn/scikit-learn/issues/8549
+		final
+<span class="pc bpc" id="L75" title="2 of 4 branches missed.">		boolean corrected = (sklearnVersion != null &amp;&amp; SkLearnUtil.compareVersion(sklearnVersion, &quot;0.19&quot;) &gt;= 0);</span>
+
+<span class="fc" id="L77">		PredicateManager predicateManager = new PredicateManager();</span>
+
+<span class="fc" id="L79">		Schema segmentSchema = schema.toAnonymousSchema();</span>
+
+<span class="fc" id="L81">		List&lt;TreeModel&gt; treeModels = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L83" title="All 2 branches covered.">		for(Regressor estimator : estimators){</span>
+<span class="fc" id="L84">			ExtraTreeRegressor treeRegressor = (ExtraTreeRegressor)estimator;</span>
+
+			final
+<span class="fc" id="L87">			Tree tree = treeRegressor.getTree();</span>
+
+<span class="fc" id="L89">			TreeModel treeModel = TreeModelUtil.encodeTreeModel(treeRegressor, predicateManager, MiningFunction.REGRESSION, segmentSchema);</span>
+
+<span class="fc" id="L91">			Visitor visitor = new AbstractVisitor(){</span>
+
+<span class="fc" id="L93">				private int[] nodeSamples = tree.getNodeSamples();</span>
+
+
+				@Override
+				public VisitorAction visit(Node node){
+
+<span class="fc bfc" id="L99" title="All 2 branches covered.">					if(node.getScore() != null){</span>
+<span class="fc" id="L100">						double nodeDepth = 0d;</span>
+
+<span class="fc" id="L102">						Deque&lt;PMMLObject&gt; parents = getParents();</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">						for(PMMLObject parent : parents){</span>
+
+<span class="fc bfc" id="L105" title="All 2 branches covered.">							if(!(parent instanceof Node)){</span>
+<span class="fc" id="L106">								break;</span>
+							}
+
+<span class="fc" id="L109">							nodeDepth++;</span>
+<span class="fc" id="L110">						}</span>
+
+<span class="fc" id="L112">						double nodeSample = this.nodeSamples[Integer.parseInt(node.getId()) - 1];</span>
+
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">						double averagePathLength = (corrected ? correctedAveragePathLength(nodeSample) : averagePathLength(nodeSample));</span>
+
+<span class="fc" id="L116">						node.setScore(ValueUtil.formatValue(nodeDepth + averagePathLength));</span>
+					}
+
+<span class="fc" id="L119">					return super.visit(node);</span>
+				}
+			};
+<span class="fc" id="L122">			visitor.applyTo(treeModel);</span>
+
+<span class="fc" id="L124">			treeModels.add(treeModel);</span>
+<span class="fc" id="L125">		}</span>
+
+		// &quot;rawAnomalyScore / averagePathLength(maxSamples)&quot;
+<span class="fc" id="L128">		Transformation normalizedAnomalyScore = new AbstractTransformation(){</span>
+
+			@Override
+			public FieldName getName(FieldName name){
+<span class="fc" id="L132">				return FieldName.create(&quot;normalizedAnomalyScore&quot;);</span>
+			}
+
+			@Override
+			public Expression createExpression(FieldRef fieldRef){
+<span class="fc" id="L137">				double maxSamples = getMaxSamples();</span>
+
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">				double averagePathLength = (corrected ? correctedAveragePathLength(maxSamples) : averagePathLength(maxSamples));</span>
+
+<span class="fc" id="L141">				return PMMLUtil.createApply(&quot;/&quot;, fieldRef, PMMLUtil.createConstant(averagePathLength));</span>
+			}
+		};
+
+		// &quot;0.5 - 2 ^ (-1 * normalizedAnomalyScore)&quot;
+<span class="fc" id="L146">		Transformation decisionFunction = new AbstractTransformation(){</span>
+
+			@Override
+			public FieldName getName(FieldName name){
+<span class="fc" id="L150">				return FieldName.create(&quot;decisionFunction&quot;);</span>
+			}
+
+			@Override
+			public Expression createExpression(FieldRef fieldRef){
+<span class="fc" id="L155">				return PMMLUtil.createApply(&quot;-&quot;, PMMLUtil.createConstant(0.5d), PMMLUtil.createApply(&quot;pow&quot;, PMMLUtil.createConstant(2d), PMMLUtil.createApply(&quot;*&quot;, PMMLUtil.createConstant(-1d), fieldRef)));</span>
+			}
+		};
+
+<span class="fc" id="L159">		Transformation outlier = new OutlierTransformation(){</span>
+
+			@Override
+			public Expression createExpression(FieldRef fieldRef){
+<span class="fc" id="L163">				return PMMLUtil.createApply(&quot;lessOrEqual&quot;, fieldRef, PMMLUtil.createConstant(getThreshold()));</span>
+			}
+		};
+
+<span class="fc" id="L167">		MiningModel miningModel = new MiningModel(MiningFunction.REGRESSION, ModelUtil.createMiningSchema(schema.getLabel()))</span>
+<span class="fc" id="L168">			.setSegmentation(MiningModelUtil.createSegmentation(MultipleModelMethod.AVERAGE, treeModels))</span>
+<span class="fc" id="L169">			.setOutput(ModelUtil.createPredictedOutput(FieldName.create(&quot;rawAnomalyScore&quot;), OpType.CONTINUOUS, DataType.DOUBLE, normalizedAnomalyScore, decisionFunction, outlier));</span>
+
+<span class="fc" id="L171">		return TreeModelUtil.transform(this, miningModel);</span>
+	}
+
+	public String getSkLearnVersion(){
+<span class="fc" id="L175">		return (String)get(&quot;_sklearn_version&quot;);</span>
+	}
+
+	public int getMaxSamples(){
+<span class="fc" id="L179">		return ValueUtil.asInt((Number)get(&quot;max_samples_&quot;));</span>
+	}
+
+	public double getThreshold(){
+<span class="fc" id="L183">		Scalar threshold = get(&quot;threshold_&quot;, Scalar.class);</span>
+
+<span class="fc" id="L185">		return ValueUtil.asDouble((Number)threshold.getOnlyElement());</span>
+	}
+
+	static
+	private double averagePathLength(double n){
+
+<span class="nc bnc" id="L191" title="All 2 branches missed.">		if(n &lt;= 1d){</span>
+<span class="nc" id="L192">			return 1d;</span>
+		}
+
+<span class="nc" id="L195">		return 2d * (Math.log(n) + 0.5772156649) - 2d * ((n - 1d) / n);</span>
+	}
+
+	static
+	private double correctedAveragePathLength(double n){
+
+<span class="fc bfc" id="L201" title="All 2 branches covered.">		if(n &lt;= 1d){</span>
+<span class="fc" id="L202">			return 1d;</span>
+		}
+
+<span class="fc" id="L205">		return 2d * (Math.log(n - 1d) + 0.577215664901532860606512090082402431d) - 2d * ((n - 1d) / n);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

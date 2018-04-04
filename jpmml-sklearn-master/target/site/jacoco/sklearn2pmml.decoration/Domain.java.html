@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Domain.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn2pmml.decoration</a> &gt; <span class="el_source">Domain.java</span></div><h1>Domain.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn2pmml.decoration;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.dmg.pmml.Counts;
+import org.dmg.pmml.DataField;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.InvalidValueTreatmentMethod;
+import org.dmg.pmml.MiningField;
+import org.dmg.pmml.MissingValueTreatmentMethod;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.InvalidValueDecorator;
+import org.jpmml.converter.MissingValueDecorator;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.HasArray;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.Transformer;
+
+abstract
+public class Domain extends Transformer {
+
+	public Domain(String module, String name){
+<span class="fc" id="L46">		super(module, name);</span>
+<span class="fc" id="L47">	}</span>
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L51">		MissingValueTreatmentMethod missingValueTreatment = DomainUtil.parseMissingValueTreatment(getMissingValueTreatment());</span>
+<span class="fc" id="L52">		Object missingValueReplacement = getMissingValueReplacement();</span>
+
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">		if(missingValueReplacement != null){</span>
+
+<span class="nc bnc" id="L56" title="All 2 branches missed.">			if(missingValueTreatment == null){</span>
+<span class="nc" id="L57">				missingValueTreatment = MissingValueTreatmentMethod.AS_VALUE;</span>
+			}
+		}
+
+<span class="fc" id="L61">		InvalidValueTreatmentMethod invalidValueTreatment = DomainUtil.parseInvalidValueTreatment(getInvalidValueTreatment());</span>
+		final
+<span class="fc" id="L63">		Object invalidValueReplacement = getInvalidValueReplacement();</span>
+
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">		if(invalidValueReplacement != null){</span>
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">			if(invalidValueTreatment == null){</span>
+<span class="nc" id="L68">				invalidValueTreatment = InvalidValueTreatmentMethod.AS_IS;</span>
+			}
+		}
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">		for(Feature feature : features){</span>
+<span class="fc" id="L73">			FieldName name = feature.getName();</span>
+
+<span class="fc bfc" id="L75" title="All 2 branches covered.">			if(missingValueTreatment != null){</span>
+<span class="fc" id="L76">				MissingValueDecorator missingValueDecorator = new MissingValueDecorator()</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">					.setMissingValueTreatment(missingValueTreatment)</span>
+<span class="pc" id="L78">					.setMissingValueReplacement(missingValueReplacement != null ? ValueUtil.formatValue(missingValueReplacement) : null);</span>
+
+<span class="fc" id="L80">				encoder.addDecorator(name, missingValueDecorator);</span>
+			} // End if
+
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">			if(invalidValueTreatment != null){</span>
+<span class="fc" id="L84">				InvalidValueDecorator invalidValueDecorator = new InvalidValueDecorator(){</span>
+
+					@Override
+					public void decorate(DataField dataField, MiningField miningField){
+<span class="fc" id="L88">						super.decorate(dataField, miningField);</span>
+
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">						if(invalidValueReplacement != null){</span>
+<span class="nc" id="L91">							miningField.setInvalidValueReplacement(ValueUtil.formatValue(invalidValueReplacement));</span>
+						}
+<span class="fc" id="L93">					}</span>
+				}
+<span class="fc" id="L95">					.setInvalidValueTreatment(invalidValueTreatment);</span>
+
+<span class="fc" id="L97">				encoder.addDecorator(name, invalidValueDecorator);</span>
+			}
+<span class="fc" id="L99">		}</span>
+
+<span class="fc" id="L101">		return features;</span>
+	}
+
+	public String getMissingValueTreatment(){
+<span class="fc" id="L105">		return (String)get(&quot;missing_value_treatment&quot;);</span>
+	}
+
+	public Object getMissingValueReplacement(){
+<span class="fc" id="L109">		return get(&quot;missing_value_replacement&quot;);</span>
+	}
+
+	public String getInvalidValueTreatment(){
+<span class="fc" id="L113">		return (String)get(&quot;invalid_value_treatment&quot;);</span>
+	}
+
+	public Object getInvalidValueReplacement(){
+<span class="fc" id="L117">		return get(&quot;invalid_value_replacement&quot;);</span>
+	}
+
+	public Boolean getWithData(){
+<span class="fc" id="L121">		Boolean withData = (Boolean)get(&quot;with_data&quot;);</span>
+
+<span class="fc bfc" id="L123" title="All 2 branches covered.">		if(withData == null){</span>
+<span class="fc" id="L124">			return Boolean.TRUE;</span>
+		}
+
+<span class="fc" id="L127">		return withData;</span>
+	}
+
+	public Boolean getWithStatistics(){
+<span class="fc" id="L131">		Boolean withStatistics = (Boolean)get(&quot;with_statistics&quot;);</span>
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">		if(withStatistics == null){</span>
+<span class="fc" id="L134">			return Boolean.FALSE;</span>
+		}
+
+<span class="fc" id="L137">		return withStatistics;</span>
+	}
+
+	public Map&lt;String, ?&gt; getCounts(){
+<span class="fc" id="L141">		return get(&quot;counts_&quot;, Map.class);</span>
+	}
+
+	static
+	public Counts createCounts(Map&lt;String, ?&gt; values){
+<span class="fc" id="L146">		Counts counts = new Counts()</span>
+<span class="fc" id="L147">			.setTotalFreq(selectValue(values, &quot;totalFreq&quot;, 0d))</span>
+<span class="fc" id="L148">			.setMissingFreq(selectValue(values, &quot;missingFreq&quot;))</span>
+<span class="fc" id="L149">			.setInvalidFreq(selectValue(values, &quot;invalidFreq&quot;));</span>
+
+<span class="fc" id="L151">		return counts;</span>
+	}
+
+	static
+	protected Map&lt;String, ?&gt; extractMap(Map&lt;String, ?&gt; map, int index){
+<span class="fc" id="L156">		Map&lt;String, Object&gt; result = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc" id="L158">		Collection&lt;? extends Map.Entry&lt;String, ?&gt;&gt; entries = map.entrySet();</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">		for(Map.Entry&lt;String, ?&gt; entry : entries){</span>
+<span class="fc" id="L160">			String key = entry.getKey();</span>
+<span class="fc" id="L161">			List&lt;?&gt; value = asArray(entry.getValue());</span>
+
+<span class="fc" id="L163">			result.put(key, value.get(index));</span>
+<span class="fc" id="L164">		}</span>
+
+<span class="fc" id="L166">		return result;</span>
+	}
+
+	static
+	protected Double selectValue(Map&lt;String, ?&gt; values, String key){
+<span class="fc" id="L171">		return selectValue(values, key, null);</span>
+	}
+
+	static
+	protected Double selectValue(Map&lt;String, ?&gt; values, String key, Double defaultValue){
+<span class="fc" id="L176">		Number value = (Number)values.get(key);</span>
+
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">		if(value == null){</span>
+<span class="nc" id="L179">			return defaultValue;</span>
+		}
+
+<span class="fc" id="L182">		return ValueUtil.asDouble(value);</span>
+	}
+
+	static
+	protected List&lt;?&gt; asArray(Object object){
+
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">		if(object instanceof HasArray){</span>
+<span class="fc" id="L189">			HasArray hasArray = (HasArray)object;</span>
+
+<span class="fc" id="L191">			return hasArray.getArrayContent();</span>
+		} // End if
+
+<span class="nc bnc" id="L194" title="All 2 branches missed.">		if(object instanceof Number){</span>
+<span class="nc" id="L195">			return Collections.singletonList(object);</span>
+		}
+
+<span class="nc" id="L198">		throw new IllegalArgumentException(ClassDictUtil.formatClass(object) + &quot; is not a supported array type&quot;);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

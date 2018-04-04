@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoricalImputer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn_pandas</a> &gt; <span class="el_source">CategoricalImputer.java</span></div><h1>CategoricalImputer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn_pandas;
+
+import java.util.Collections;
+import java.util.List;
+
+import numpy.core.Scalar;
+import org.dmg.pmml.MissingValueTreatmentMethod;
+import org.jpmml.converter.Feature;
+import org.jpmml.sklearn.ClassDictUtil;
+import org.jpmml.sklearn.SkLearnEncoder;
+import sklearn.Transformer;
+import sklearn.preprocessing.ImputerUtil;
+
+public class CategoricalImputer extends Transformer {
+
+	public CategoricalImputer(String module, String name){
+<span class="fc" id="L35">		super(module, name);</span>
+<span class="fc" id="L36">	}</span>
+
+	@Override
+	public List&lt;Feature&gt; encodeFeatures(List&lt;Feature&gt; features, SkLearnEncoder encoder){
+<span class="fc" id="L40">		Object fill = getFill();</span>
+<span class="fc" id="L41">		Object missingValues = getMissingValues();</span>
+
+<span class="fc" id="L43">		ClassDictUtil.checkSize(1, features);</span>
+
+<span class="fc bfc" id="L45" title="All 2 branches covered.">		if((&quot;NaN&quot;).equals(missingValues)){</span>
+<span class="fc" id="L46">			missingValues = null;</span>
+		}
+
+<span class="fc" id="L49">		Feature feature = features.get(0);</span>
+
+<span class="fc" id="L51">		return Collections.&lt;Feature&gt;singletonList(ImputerUtil.encodeFeature(feature, missingValues, fill, MissingValueTreatmentMethod.AS_MODE, encoder));</span>
+	}
+
+	public Object getFill(){
+<span class="fc" id="L55">		return asJavaObject(get(&quot;fill_&quot;));</span>
+	}
+
+	public Object getMissingValues(){
+<span class="fc" id="L59">		return asJavaObject(get(&quot;missing_values&quot;));</span>
+	}
+
+	static
+	private Object asJavaObject(Object object){
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">		if(object instanceof Scalar){</span>
+<span class="fc" id="L66">			Scalar scalar = (Scalar)object;</span>
+
+<span class="fc" id="L68">			return scalar.getOnlyElement();</span>
+		}
+
+<span class="fc" id="L71">		return object;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

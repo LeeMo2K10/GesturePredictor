@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GaussianNB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JPMML-SkLearn</a> &gt; <a href="index.source.html" class="el_package">sklearn.naive_bayes</a> &gt; <span class="el_source">GaussianNB.java</span></div><h1>GaussianNB.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2015 Villu Ruusmann
+ *
+ * This file is part of JPMML-SkLearn
+ *
+ * JPMML-SkLearn is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * JPMML-SkLearn is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with JPMML-SkLearn.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package sklearn.naive_bayes;
+
+import java.util.List;
+
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.GaussianDistribution;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.naive_bayes.BayesInput;
+import org.dmg.pmml.naive_bayes.BayesInputs;
+import org.dmg.pmml.naive_bayes.BayesOutput;
+import org.dmg.pmml.naive_bayes.NaiveBayesModel;
+import org.dmg.pmml.naive_bayes.TargetValueCount;
+import org.dmg.pmml.naive_bayes.TargetValueCounts;
+import org.dmg.pmml.naive_bayes.TargetValueStat;
+import org.dmg.pmml.naive_bayes.TargetValueStats;
+import org.jpmml.converter.CMatrixUtil;
+import org.jpmml.converter.CategoricalLabel;
+import org.jpmml.converter.ContinuousFeature;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.ModelUtil;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.ValueUtil;
+import org.jpmml.sklearn.ClassDictUtil;
+import sklearn.Classifier;
+
+public class GaussianNB extends Classifier {
+
+	public GaussianNB(String module, String name){
+<span class="fc" id="L47">		super(module, name);</span>
+<span class="fc" id="L48">	}</span>
+
+	@Override
+	public int getNumberOfFeatures(){
+<span class="fc" id="L52">		int[] shape = getThetaShape();</span>
+
+<span class="fc" id="L54">		return shape[1];</span>
+	}
+
+	@Override
+	public NaiveBayesModel encodeModel(Schema schema){
+<span class="fc" id="L59">		int[] shape = getThetaShape();</span>
+
+<span class="fc" id="L61">		int numberOfClasses = shape[0];</span>
+<span class="fc" id="L62">		int numberOfFeatures = shape[1];</span>
+
+<span class="fc" id="L64">		List&lt;? extends Number&gt; theta = getTheta();</span>
+<span class="fc" id="L65">		List&lt;? extends Number&gt; sigma = getSigma();</span>
+
+<span class="fc" id="L67">		CategoricalLabel categoricalLabel = (CategoricalLabel)schema.getLabel();</span>
+
+<span class="fc" id="L69">		BayesInputs bayesInputs = new BayesInputs();</span>
+
+<span class="fc bfc" id="L71" title="All 2 branches covered.">		for(int i = 0; i &lt; numberOfFeatures; i++){</span>
+<span class="fc" id="L72">			Feature feature = schema.getFeature(i);</span>
+
+<span class="fc" id="L74">			List&lt;? extends Number&gt; means = CMatrixUtil.getColumn(theta, numberOfClasses, numberOfFeatures, i);</span>
+<span class="fc" id="L75">			List&lt;? extends Number&gt; variances = CMatrixUtil.getColumn(sigma, numberOfClasses, numberOfFeatures, i);</span>
+
+<span class="fc" id="L77">			ContinuousFeature continuousFeature = feature.toContinuousFeature();</span>
+
+<span class="fc" id="L79">			BayesInput bayesInput = new BayesInput(continuousFeature.getName())</span>
+<span class="fc" id="L80">				.setTargetValueStats(encodeTargetValueStats(categoricalLabel.getValues(), means, variances));</span>
+
+<span class="fc" id="L82">			bayesInputs.addBayesInputs(bayesInput);</span>
+		}
+
+<span class="fc" id="L85">		List&lt;Integer&gt; classCount = getClassCount();</span>
+
+<span class="fc" id="L87">		BayesOutput bayesOutput = new BayesOutput(categoricalLabel.getName(), null)</span>
+<span class="fc" id="L88">			.setTargetValueCounts(encodeTargetValueCounts(categoricalLabel.getValues(), classCount));</span>
+
+<span class="fc" id="L90">		NaiveBayesModel naiveBayesModel = new NaiveBayesModel(0d, MiningFunction.CLASSIFICATION, ModelUtil.createMiningSchema(categoricalLabel), bayesInputs, bayesOutput)</span>
+<span class="fc" id="L91">			.setOutput(ModelUtil.createProbabilityOutput(DataType.DOUBLE, categoricalLabel));</span>
+
+<span class="fc" id="L93">		return naiveBayesModel;</span>
+	}
+
+	public List&lt;Integer&gt; getClassCount(){
+<span class="fc" id="L97">		return ValueUtil.asIntegers(getArray(&quot;class_count_&quot;, Number.class));</span>
+	}
+
+	public List&lt;? extends Number&gt; getTheta(){
+<span class="fc" id="L101">		return getArray(&quot;theta_&quot;, Number.class);</span>
+	}
+
+	public int[] getThetaShape(){
+<span class="fc" id="L105">		return getArrayShape(&quot;theta_&quot;, 2);</span>
+	}
+
+	public List&lt;? extends Number&gt; getSigma(){
+<span class="fc" id="L109">		return getArray(&quot;sigma_&quot;, Number.class);</span>
+	}
+
+	static
+	private TargetValueStats encodeTargetValueStats(List&lt;String&gt; values, List&lt;? extends Number&gt; means, List&lt;? extends Number&gt; variances){
+<span class="fc" id="L114">		TargetValueStats targetValueStats = new TargetValueStats();</span>
+
+<span class="fc" id="L116">		ClassDictUtil.checkSize(values, means, variances);</span>
+
+<span class="fc bfc" id="L118" title="All 2 branches covered.">		for(int i = 0; i &lt; values.size(); i++){</span>
+<span class="fc" id="L119">			GaussianDistribution gaussianDistribution = new GaussianDistribution(ValueUtil.asDouble(means.get(i)), ValueUtil.asDouble(variances.get(i)));</span>
+
+<span class="fc" id="L121">			TargetValueStat targetValueStat = new TargetValueStat(values.get(i))</span>
+<span class="fc" id="L122">				.setContinuousDistribution(gaussianDistribution);</span>
+
+<span class="fc" id="L124">			targetValueStats.addTargetValueStats(targetValueStat);</span>
+		}
+
+<span class="fc" id="L127">		return targetValueStats;</span>
+	}
+
+	static
+	private TargetValueCounts encodeTargetValueCounts(List&lt;String&gt; values, List&lt;Integer&gt; counts){
+<span class="fc" id="L132">		TargetValueCounts targetValueCounts = new TargetValueCounts();</span>
+
+<span class="fc" id="L134">		ClassDictUtil.checkSize(values, counts);</span>
+
+<span class="fc bfc" id="L136" title="All 2 branches covered.">		for(int i = 0; i &lt; values.size(); i++){</span>
+<span class="fc" id="L137">			TargetValueCount targetValueCount = new TargetValueCount(values.get(i), counts.get(i));</span>
+
+<span class="fc" id="L139">			targetValueCounts.addTargetValueCounts(targetValueCount);</span>
+		}
+
+<span class="fc" id="L142">		return targetValueCounts;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
