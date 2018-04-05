@@ -98,14 +98,16 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 public void onTick(long millisUntilFinish){
                     int secondsLeft = (int)millisUntilFinish/1000;
 
-                    if (secondsLeft >= 2){
+                    if (secondsLeft > 2){
                         s = "Ready " + (secondsLeft - 2);
                         mTextView.setText(s);
                         vibrate();
                     }
-                    else{
+
+                    else if (secondsLeft == 2){
                         isRecording = true;
                         s = "Recording";
+                        vibrate();
                         mTextView.setText(s);
                     }
 
@@ -232,7 +234,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private void setResult(){
 
         final String results = classifier.recognizeGesture(getFrameFeature());
-        mTextView.setText("Result:" + results);
+        mTextView.setText("Result: " + results);
     }
 
     private float[][][] getFrameFeature(){
