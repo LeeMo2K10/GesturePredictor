@@ -12,6 +12,7 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -25,7 +26,7 @@ import java.util.concurrent.Executors;
 public class MainActivity extends WearableActivity implements SensorEventListener{
 
     private TextView mTextView;
-    private Button startBtn;
+//    private Button startBtn;
     private Vibrator vibrator;
     private TimeStart timer;
     private boolean isRecording;
@@ -47,16 +48,19 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         setContentView(R.layout.activity_main);
 
         mTextView = findViewById(R.id.text);
-        startBtn = findViewById(R.id.startBtn);
-        startBtn.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v){
-//                createFile();
-                startBtn.setVisibility(View.INVISIBLE);
-                mTextView.setVisibility(View.VISIBLE);
-                timer.run();
-            }
-        });
+//        startBtn.setVisibility(View.INVISIBLE);
+        mTextView.setVisibility(View.VISIBLE);
+        mTextView.setText("Ready to start! Flick wrist out to start");
+//        startBtn = findViewById(R.id.startBtn);
+//        startBtn.setOnClickListener(new View.OnClickListener(){
+//            @Override
+//            public void onClick(View v){
+////                createFile();
+//                startBtn.setVisibility(View.INVISIBLE);
+//                mTextView.setVisibility(View.VISIBLE);
+//                timer.run();
+//            }
+//        });
 
         RegisterSensors();
         timer = new TimeStart();
@@ -69,6 +73,22 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         initTensorFlowAndLoadModel();
     }
 
+    @Override /* KeyEvent.Callback */
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_NAVIGATE_NEXT:
+                // Do something that advances a user View to the next item in an ordered list.
+                vibrate();
+//                isRecording = true;
+//                startBtn.setVisibility(View.INVISIBLE);
+                mTextView.setVisibility(View.VISIBLE);
+                timer.run();
+                return true;
+
+        }
+        return false;
+    }
+
     private class TimeStart extends Thread{
         public void run(){
             Log.i("main_activity", "TimeStart");
@@ -78,7 +98,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 public void onTick(long millisUntilFinish){
                     int secondsLeft = (int)millisUntilFinish/1000;
 
-                    if (secondsLeft > 2){
+                    if (secondsLeft >= 2){
                         s = "Ready " + (secondsLeft - 2);
                         mTextView.setText(s);
                         vibrate();
