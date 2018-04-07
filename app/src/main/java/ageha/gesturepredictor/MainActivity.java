@@ -92,7 +92,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private class TimeStart extends Thread{
         public void run(){
             Log.i("main_activity", "TimeStart");
-            CountDownTimer countDownTimer = new CountDownTimer( 6 * 1000, 1000){
+            CountDownTimer countDownTimer = new CountDownTimer( 7 * 1000, 1000){
                 String s;
                 @Override
                 public void onTick(long millisUntilFinish){
@@ -115,6 +115,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 @Override
                 public void onFinish(){
                     isRecording = false;
+                    vibrate(500);
                     setResult();
                 }
             };
@@ -123,12 +124,22 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     private void vibrate(){
-        // Vibrate for 500 milliseconds
+        // Vibrate for 150 milliseconds
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             vibrator.vibrate(VibrationEffect.createOneShot(150,VibrationEffect.DEFAULT_AMPLITUDE));
         }else{
             //deprecated in API 26
             vibrator.vibrate(150);
+        }
+    }
+
+    private void vibrate(int t){
+        // Vibrate for 500 milliseconds
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(t,VibrationEffect.DEFAULT_AMPLITUDE));
+        }else{
+            //deprecated in API 26
+            vibrator.vibrate(t);
         }
     }
 
@@ -234,6 +245,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private void setResult(){
 
         final String results = classifier.recognizeGesture(getFrameFeature());
+        allData.clear();
         mTextView.setText("Result: " + results);
     }
 
