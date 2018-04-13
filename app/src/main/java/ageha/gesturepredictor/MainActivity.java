@@ -14,6 +14,7 @@ import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -30,6 +31,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private Vibrator vibrator;
     private TimeStart timer;
     private boolean isRecording;
+    private boolean readyRecording = false;
     private long sensorTimeReference = 0L;
     private long myTimeReference = 0L;
     private ArrayList<float[]> allData = new ArrayList<>();
@@ -71,10 +73,15 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         isRecording = false;
 
         initTensorFlowAndLoadModel();
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     @Override /* KeyEvent.Callback */
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (this.readyRecording){
+            return true;
+        }
         switch (keyCode) {
             case KeyEvent.KEYCODE_NAVIGATE_NEXT:
                 // Do something that advances a user View to the next item in an ordered list.
@@ -94,27 +101,27 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             Log.i("main_activity", "TimeStart");
             CountDownTimer countDownTimer = new CountDownTimer( 7 * 1000, 1000){
                 String s;
+
                 @Override
                 public void onTick(long millisUntilFinish){
                     int secondsLeft = (int)millisUntilFinish/1000;
-
-                    if (secondsLeft > 2){
-                        s = "Ready " + (secondsLeft - 2);
+                    readyRecording = true;
+                    if (secondsLeft > 3){
+                        s = "Ready " + (secondsLeft - 3);
                         mTextView.setText(s);
                         vibrate();
                     }
-
-                    else if (secondsLeft == 2){
+                    else if (secondsLeft == 3){
                         isRecording = true;
                         s = "Recording";
-                        vibrate();
+                        vibrate(200);
                         mTextView.setText(s);
                     }
-
                 }
                 @Override
                 public void onFinish(){
                     isRecording = false;
+                    readyRecording = false;
                     vibrate(500);
                     setResult();
                 }
