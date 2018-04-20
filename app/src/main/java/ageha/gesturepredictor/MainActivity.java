@@ -1,5 +1,6 @@
 package ageha.gesturepredictor;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -15,7 +16,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 public class MainActivity extends WearableActivity implements SensorEventListener{
 
     private TextView mTextView;
-//    private Button startBtn;
     private Vibrator vibrator;
     private TimeStart timer;
     private boolean isRecording;
@@ -50,19 +49,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         setContentView(R.layout.activity_main);
 
         mTextView = findViewById(R.id.text);
-//        startBtn.setVisibility(View.INVISIBLE);
         mTextView.setVisibility(View.VISIBLE);
         mTextView.setText("Ready to start! Flick wrist out to start");
-//        startBtn = findViewById(R.id.startBtn);
-//        startBtn.setOnClickListener(new View.OnClickListener(){
-//            @Override
-//            public void onClick(View v){
-////                createFile();
-//                startBtn.setVisibility(View.INVISIBLE);
-//                mTextView.setVisibility(View.VISIBLE);
-//                timer.run();
-//            }
-//        });
 
         RegisterSensors();
         timer = new TimeStart();
@@ -104,7 +92,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
                 @Override
                 public void onTick(long millisUntilFinish){
-                    int secondsLeft = (int)millisUntilFinish/1000;
+                    int secondsLeft = Math.round(millisUntilFinish/1000);
                     readyRecording = true;
                     if (secondsLeft > 3){
                         s = "Ready " + (secondsLeft - 3);
